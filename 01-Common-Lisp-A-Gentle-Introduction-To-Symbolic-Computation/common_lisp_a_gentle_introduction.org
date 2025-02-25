@@ -1,0 +1,3021 @@
+* Time Table
+#+BEGIN: clocktable :scope file :maxlevel 5
+#+CAPTION: Clock summary at [2024-07-27 Sat 17:01]
+| Headline                           | Time   |      |      |      |      |
+|------------------------------------+--------+------+------+------+------|
+| *Total time*                       | *1:09* |      |      |      |      |
+|------------------------------------+--------+------+------+------+------|
+| TOC                                | 1:09   |      |      |      |      |
+| \_  Structures and The Type System |        | 1:09 |      |      |      |
+| \_    EXERCISES                    |        |      | 1:09 |      |      |
+| \_      KEYBOARD EXERCISE          |        |      |      | 1:09 |      |
+| \_        PROCESS-NODE             |        |      |      |      | 0:14 |
+| \_        RUN                      |        |      |      |      | 0:35 |
+| \_        ADD-NODES                |        |      |      |      | 0:13 |
+| \_        ADD SOME NODES           |        |      |      |      | 0:05 |
+#+END:
+
+* LEVEL :beginner:lisp:
+This is a beginner level introduction to CL.
+The target audiences are students and first-time programmers, and therefore it doesn't assume any prior knowledge of programming.
+
+* FIRST IMPRESSION
+This book is, as the title implies, a gentle introduction to programming, using Common Lisp. It is a textbook suited to a classroom environment.
+
+After reading the first two chapters, my feeling is that it is unsuitable to a modern internet audience. The value in online teaching material is that you can get into programming quickly thanks to quick start guides, video tutorials and walkthroughs, etc. Textbooks are bogged down by the desire to front-load learning, leaving "real work" until after considerable trivial learning takes place.
+
+It is my assertion that people learn better when they have a goal to point them toward, even if it is only short-term. Systems are better for long-term learning, but part of a system must also include short-term 'check points' to provide small victories and a feeling of progress.
+
+Textbooks don't provide good checkpoints. This book has small exercises in the middle of every chapter, as well as review exercises at the end of each chapter, but those exercises are too small and disconnected. It's difficult to see their relevance in real programming tasks.
+
+Instead, it is better to do walkthroughs of some real programs, teaching different concepts as they naturally are necessary to complete a task. It's okay to front-load some learning ahead of time, but the time between study and practice needs to be minimal.
+
+This book also suffers from some strange chapter naming, subject ordering, and other strange choices. Why "EVAL Notation" instead of "infix notation" or simply "syntax"? Why not use "real code" instead of box diagrams for the first two chapters?
+* EXERCISES
+** Functions and Data
+*** NOTES
+This chapter teaches functions and some simple predicates for determining truth and falsity.
+
+The book uses small diagrams, rather than code, to show how functions work. There is, in fact, no code at all in this chapter. In other words, the author doesn't teach sytax first. He teaches the concepts of functions (how they receive data as arguments and return data, whether numerical or boolean), numbers, symbols, predicates, and the booleans t and nil. He also briefly touches on the ways we can err in coding.
+
+There are exercises sprinkled throughout the chapter. There are also "review exercises at the end"
+
+He also only focuses on EQUAL, believing it to be the most important of the equality predicates.
+
+*** ANALYSIS
+**** LIKE
+I like the idea of small exercises sprinkled throughout the chapter. However, I don't want to do the exercises and would rather do self-driven exploration.
+**** DISLIKE
+For my purposes, I don't like the lack of code in this chapter. For my course, I want to get people coding as soon as possible.
+** Lists
+*** NOTES
+This chapter teaches the fundamentals of lists ("the most versatile data type").
+
+Teaches how lists are linked cons cells, which are linked together with pointers (important and different from JS or Python)
+
+Briefly touches on the fact that objects live in separate places in memory and that functions are supplied *pointers* to those objects.
+*** CODE
+#+begin_src lisp
+;; Lists are linked cons cells
+(equal
+ (cons 'red (cons 'green (cons 'blue nil)))
+ (list 'red 'green 'blue))                          ; t
+
+(equal (list 'red 'green 'blue) '(red green blue))  ; t
+
+;; symbol and (symbol) are different
+
+(atom 'blue)
+(atom '(blue))
+(equal 'blue '(blue))
+
+;; LENGTH ignores nested sublists
+(length '(red (green blue) cyan))       ; 3, not 4
+(length 'red)                           ; error
+
+;; NIL is an empty list and a symbol
+
+(equal nil '())                         ; t
+
+(setq rgb '(red green blue))
+(first rgb)                             ; red
+(rest rgb)                              ; (green blue)
+
+;; FIRST is the same as CAR, REST is the same as CDR
+(equal (first rgb) (car rgb))           ; t
+(equal (rest rgb) (cdr rgb))            ; t
+;; But, when digging down into nested lists, CAR and CDR variants are probably easier to use
+(caaddr '(red
+          (green yellow (sky-blue ocean-blue) indigo)
+          (pink cyan neon-green)))
+(first (third '(red
+                (green yellow (sky-blue ocean-blue) indigo)
+                (pink cyan neon-green))))
+
+;; LISTP and CONSP are the same except for their treatment of NIL. NIL is a list, but not a cons cell
+(listp nil)                                         ; t
+(consp nil)                                         ; nil
+
+;; ATOM returns t if its input is anything other than a cons cell
+(atom 'blue)
+(atom rgb)
+
+;; NULL returns to if its input is NIL.
+;; NULL and NOT behave the same.
+;; It is Lispy to use NOT for logical operations, changing T to NIL and vice versa
+;; and to use NULL to test if something is NIL or an empty list
+(null rgb)
+(null '())
+(not '())
+
+;;; Advanced
+;; proper list
+;; ends with nil
+(cons 'red (cons 'green (cons 'blue nil)))
+;; LIST only builds proper lists
+
+;; dotted list
+;; ends with 'yellow
+(cons 'red (cons 'green (cons 'blue 'yellow)))
+
+;; dotted pair
+(cons 'a 'b)
+
+;; circular lists refer to the first car of the first cons cell from the cdr of the last cons cell in the chain
+#1=('a 'b 'c . #1#)                     ; error, wish the author would write code and not diagrams
+
+;; The length of dotted lists doesn't include cdrs
+(length rgb)
+(length '(red green . blue))            ; error! The value BLUE is not of type LIS              T
+#+end_src
+
+**** FUNCTIONS COVERED IN THIS CHAPTER
+List functions: FIRST, SECOND, THIRD, FOURTH, REST, CAR, CDR, CONS, LIST, LENGTH.
+
+compositions of CAR and CDR: CADR, CADDR, etc.
+
+Predicates: LISTP, CONSP, ATOM, NULL
+
+*** ANALYSIS
+Why is the second chapter about lists? Fundamental data structure? LISt Processor?
+
+This chapter feels like it would be a
+**** LIKE
+**** DISLIKE
+Hard to see the relevance of the CAR/CADR stuff.
+
+Still not doing much programming. Spending time just messing with CARs and CDRs
+
+This kind of "foundational" learning is better done "on the job". Front loading this knowledge makes it difficult to connect to real work. You'll need to review it anyway when the time comes to actually do something useful.
+
+After 76 pages, still no "real" programming happening.
+
+**** QUESTIONS
+- How is the author teaching this subject? Why?
+
+  Exercises. Target is students, book is meant to be used as textbook.
+
+- How has the author divided up the work of teaching this subject? Why?
+
+  He frontloads learning of Lists before getting into any serious exercises.
+
+  He probably does so because this book is meant as a textbook, and that's how textbooks are written.
+
+- Why has the author chosen to teach this now?
+
+  I suspect because LISP is about LISt Processing.
+- What are the strengths and weaknesses of this approach and order of teaching?
+
+  For simple tasks, lists are useful as data structures. Lisp code is made of of cons cells, and so is data.
+
+- What do I like and not like about this?
+
+  Frontloading learning here seems inefficient and probably doesn't help learning. You'll need to review this chapter later when doing real work with lists, so why not learn on the job?
+
+  However, if you ignore the diagrams and exercises, the chapter is fairly brief, so it probably wouldn't be bad as a reference page on the basics of Lists. It could probably be shortened to a mere cheatsheet.
+** EVAL Notation
+*** NOTES
+We are doing away with the diagrams, thankfully. Now we see code.
+
+Author doesn't mention "infix notation", but explains it through evaltrace diagram.
+*** CODE
+#+begin_src lisp
+;; Exerc        ises
+;; Write HALF, CUBE, ONEMOREP
+
+(defun half (x)
+  (/ x 2))
+
+(defun cube (x)
+  (* x x x))
+
+(defun onemorep (x y)
+  (equal (+ x 1) y))
+
+;; Define a function PYTHAG that takes two inputs, x and y, and returns the square root of x squared and y squared.
+;; This will compute the length of the hypotenuse of a right triangle. (PYTHAG 3 4) should return 5.0
+
+(defun pythag (x y)
+  (sqrt (+ (expt x 2) (expt y 2))))
+
+(pythag 3 4)
+
+
+(defun miles-per-gallon (initial-odometer-reading final-odometer-reading gallons-consumed)
+  (/ (- final-odometer-reading initial-odometer-reading) gallons-consumed))
+
+(miles-per-gallon 1000 1100 5)
+
+;; A variable is a place where data is stored.
+;; The value of a variable is the data it holds.
+;; Nothing about LET? Yikes.
+
+;; Symbols can be used as data
+
+(equal bob smith)                       ; error, BOB and SMITH are unassigned variables
+(equal 'bob 'smith)                     ; nil, the symbols, rather than the variable values that the symbols might hold, are treated as data
+;; t and nil don't need to be quoted
+(list 'bob nil 'smith)
+;; Lists need to be quoted to use them as data, too.
+;; Quoting prevents the list from being evaluated
+(+ 1 2)
+'(+ 1 2)
+(first '(we hold these truths))
+#+end_src
+This chapter is largely about syntax. The most important concepts he teaches are how to define a function and how it's possible to pass around symbols and forms as data via quoting.
+#+begin_src lisp
+(+ 1 2) ; 3
+'(+ 1 2) ; (+ 1 2)
+#+end_src
+
+After that, he begins teaching about the REPL, but most of the "how-to" stuff is outdated. In any case, this section is better suited for the beginning of the book. Modern audiences watching videos would be better off than readers of this book.
+
+He also talks about the internal structure of a symbol, the scope of variables (in the context of arguments to functions).
+#+begin_src lisp
+;;; Advanced
+;; EVAL
+(eval (eval ''red))                     ; "red"
+(eval '(+ 1 2))                         ; 3
+
+;; APPLY
+;; When passing the symbol of a function as an argument for use AS a function,
+;; use #' to quote it.
+(apply #'+ '(1 2))                      ; 3
+(apply '+ '(1 2))                       ; This works to. It's not clear to me when the difference between #' and ' is.
+#+end_src
+
+*** ANALYSIS
+This whole chapter is a bit strange. The name "EVAL notation" feels out of place in modern contexts. "Syntax" is more relatable.
+
+The timing of the chapter is poor, and could be related much better is the context of a real project.
+
+Too much time is spent teaching what can go wrong, common mistakes made by students, and not doing actual programming. Nearly 100 pages into the book and he is only now ready to have students begin coding. He also gives no direction about how to get started, like what text editor to use, etc. Even if that would have been outdated now, it would have been useful then. However, it's possible that there was too much fragmentation in OS/hardware at the time, so I'll cut him some slack.
+
+*** QUESTIONS
+- How is the author teaching this subject? Why?
+- How has the author divided up the work of teaching this subject? Why?
+- Why has the author chosen to teach this now?
+- What are the strengths and weaknesses of this approach and order of teaching?
+- What do I like and not like about this?
+
+  "eval notation" seems an odd title for the chapter.
+
+- How is the author teaching this subject? Why?
+  The author is replacing box graphs with actual code...sometimes.
+
+  Why not teach syntax earlier? Probably to teach some concepts up front without confusing students with syntax too early. This feels like a technique that was more popular then. I recall Japanese being taught using romanji instead of kana and kanji.
+
+- How has the author divided up the work of teaching this subject? Why?
+  The most important thing he does is introduce variables and their relationship to symbols, and that symbols and lists can be passed around as data via quoting.
+
+  He also teaches how to define a function.
+
+- Why has the author chosen to teach this now?
+  Because he taught some important concepts and now needs to actually teach some code.
+
+- What are the strengths and weaknesses of this approach and order of teaching?
+  It's hard to see any strengths. He should have taught syntax earlier. Teaching variables and symbols earlier would have been trivial. And he still hasn't taught how to save data to a variable, only that such a thing is possible.
+
+- What do I like and not like about this?
+  I dislike nearly this whole chapter. Teaching that symbols and forms can be passed around as data is probably the best aspect of it.
+
+** Conditionals
+*** NOTES
+4.1. Write a function MAKE-EVEN that makes an odd number even by adding one to it. If the input to MAKE-EVEN is already even, it should be returned unchanged.
+4.2. Write a function FURTHER that makes a positive number larger by adding one to it, and a negative number smaller by subtracting one from it. What does your function do if given the number 0?
+4.3. Recall the primitive function NOT: It returns NIL for a true input and T for a false one. Suppose Lisp didn’t have a NOT primitive. Show how to write NOT using just IF and constants (no other functions). Call your function MY-NOT.
+4.4. Write a function ORDERED that takes two numbers as input and makes a list of them in ascending order. (ORDERED 3 4) should return the list (3 4). (ORDERED 4 3) should also return (3 4), in other words, the first and second inputs should appear in reverse order when the first is greater than the second.
+
+This chapter has an exercises for making a rock-paper-scissors game.
+*** CODE
+#+begin_src lisp
+;; AND and OR are conditionals.
+;; The can evaluate an arbitrary number of clauses.
+;; Because they're conditionals, their evaluation ends as soon as a clause meets the condition.
+;; We can use this property of AND and OR to prevent errors
+
+;; If (numerp x) isn't included here, then a "wrong type" error will be signaled.
+(defun posnump (x)
+  (and (numberp x) (plusp x)))
+;; I learned this lesson through trial-and-error. Important to understand.
+#+end_src
+
+Author teaches that conditionals are interchangable.
+#+begin_src lisp
+(and (numberp 5) (> 5 4))
+;; is the same as
+(if (numberp 5) (> 5 4) nil)
+#+end_src
+
+He does the same for COND.
+
+In advanced section, he explains that AND and OR are interchangable. Useful for simplifying complicated conditional forms.
+
+Functions covered:
+IF, COND, AND, OR
+
+Predicate: PLUSP
+*** ANALYSIS
+Exercises presented in this chapter are mostly uninteresting. The exception is the rock paper scissors exercise. But even that isn't a playable version of the game.
+
+The number of conditionals is presented is limited. Why not teach WHEN and UNLESS?
+
+Some people say that the included exercises are interesting and educational, but I find them boring (and if I was a student, I probably wouldn't do them).
+
+As I continue reading, the text-book nature of Gentle makes it more and more difficult to like.
+
+- How is the author teaching this subject? Why?
+  He relies a lot on small exercises to give students an opportunity to practice conditionals. He doesn't have any real jobs to give, although the rock paper scissors exercise is sure to be of interest to students.
+
+- How has the author divided up the work of teaching this subject? Why?
+  Begins with IF. Probably because it's the easiest to understand immediately. COND comes after, and then AND and OR to combine with IF and COND.
+
+- Why has the author chosen to teach this now?
+  Because students now understand the basics of lists, functions, and variables, the natural progression seems to be conditionals. A combination of the four allows far more programming work.
+
+- What are the strengths and weaknesses of this approach and order of teaching?
+  Slowly bringing out different parts of programming is perhaps useful to people who are brand-new to programming, but it comes at a cost of time efficiency.
+
+- What do I like and not like about this?
+  I liked the rock paper scissors exercise. I liked the explanation about how AND and OR are interchangable and how that fact can be used to simplify complex conditional forms.
+
+  I didn't like the lack of WHEN and UNLESS. Nor did I like (if (numberp x) (> x y) nil). Today it's considered bad practice to do that.
+
+** Variables and Side Effects
+*** FUNCTIONS COVERED
+SETF, LET, LET*
+*** NOTES
+Finally, 138 pages into the book, the author teaches how to set a variable via SETF.
+
+In each chapter, he introduces little "Lisp Tookit" items that aid in Lisp programming. Things like tracing, special tools for visualizing cons structures, etc.
+
+"Documentation is important", talking about DOCUMENTATION and APROPOS.
+
+*** CODE
+#+begin_src lisp
+;;; Keyboard Exercise
+;; Craps
+(defun throw-die ()
+  (let ((roll (random 7)))
+    (if (> roll 0)
+        roll
+        (throw-die))))
+
+(defun throw-dice ()
+  (list (throw-die) (throw-die)))
+
+(defun snake-eyes-p (throw)
+  (and (equal (first throw) 1)
+       (equal (first throw) (second throw))))
+
+(defun boxcars-p (throw)
+  (and (equal (first throw) 6)
+       (equal (first throw) (second throw))))
+
+(defun instant-win-p (throw)
+  (let* ((die-one (first throw))
+         (die-two (second throw))
+         (total (+ die-one die-two)))
+    (or (equal 7 total)
+        (equal 11 total))))
+
+
+(defun reduce-instant-win-p (throw)
+  (let ((total (reduce #'+ throw)))
+    (or (equal 7 total)
+        (equal 11 total))))
+
+(defun instant-loss-p (throw)
+  (let ((total (reduce #'+ throw)))
+    (or (equal 2 total)
+        (equal 3 total)
+        (equal 12 total))))
+
+(defun say-throw (throw)
+  (cond ((snake-eyes-p throw) 'snake-eyes)
+        ((boxcars-p throw) 'boxcars)
+        (t (reduce #'+ throw))))
+
+(defun craps ()
+  (let* ((throw (throw-dice))
+         (result (cond ((instant-win-p throw) (format nil "You win"))
+                       ((instant-loss-p throw) (format nil "You lose"))
+                       (t (format nil "Your point is ~a" (reduce #'+ throw))))))
+    (format nil "Throw ~a and ~a -- ~a -- ~a" (first throw) (second throw) (say-throw throw) result)))
+
+(defun try-for-point (point)
+  (let* ((throw (throw-dice))
+         (total (reduce #'+ throw))
+         (win-p (equal point total))
+         (loss-p (equal 7 total))
+         (result (cond ((and (not win-p) (not loss-p)) (format nil "Try again"))
+                       (win-p (format nil "You win"))
+                       (t (format nil "You lose")))))
+    (format nil "Throw ~a and ~a -- ~a -- ~a" (first throw) (second throw) (say-throw throw) result)))
+#+end_src
+
+**** ADVANCED
+Symbols are composed of five components
+
+1. Symbol name
+2. Global Variable value
+   Symbols can name multiple variables, but only one can be global.
+3. Function
+4. not mentioned
+5. not mentioned
+
+This means that symbol AMERICA can refer to a global variable value, or to a function. If AMERICA comes at the beginning of a list, then it is treated as a function. Otherwise, it's global variable value is used.
+
+Lexical scoping means that a function parameter variable will be search for first before a global variable.
+*** ANALYSIS
+We finally get a real exercise as a "keyboard exercise".
+
+It's simple, but suffers from forcing the use of list formatting.
+
+If you use strings, it is easier and feels "fair". Forcing lists feels unfair (and pointless).
+
+- How is the author teaching this subject? Why?
+  Quickly teaches about how to assign variable values, then switches to the first major project. Why? Probably because enough front-loaded learning has been accomplished.
+- How has the author divided up the work of teaching this subject? Why?
+  The beginning is somewhat short, followed by an exercise and some advanced discussion.
+
+  The exercise, with some modifications for sanity, is a good small practice project.
+
+- Why has the author chosen to teach this now?
+  Because of front-loaded learning.
+
+- What are the strengths and weaknesses of this approach and order of teaching?
+  The project is strong because it provides a use and a goal for all previous learning, but the learning should have done in the context of completing the project, or in a walkthrough of completing the project, rather than used as a practice exercise to use previously learned information.
+
+- What do I like and not like about this?
+  I like the exercise, but I don't like some of its limitations, nor the timing or usage.
+
+** List Data Structures
+*** NOTES
+Chapter 6 of 14, so nearly half-way through the book.
+
+The section on LISTS as sets is useful for helping understand how to use MEMBER to find a single item in a list, and INTERSECTION for finding one or more items in a list.
+
+This is the first chapter that feels interesting and helpful for me. A beginner may have been helped partially before, but still, it's a school textbook with all the downsides.
+
+The help with MEMBER, INTERSECTION, UNION, SET-DIFFERENCE, etc. is very nice.
+
+Exercises 6.24 and 6.25 feel very relevant to the "sublist" exercise on Exercism.
+
+6.7 PROGRAMMING WITH SETS
+There is a small walkthrough that demonstrates the value of breaking a problem up into small parts/functions in order to make the entire task easier to finish (and enhance maintainability).
+
+#+begin_src lisp
+;; This does what we expect:
+;; add w to the beginning of the list
+(cons 'w '(x y z))
+
+;; This doesn't do what we expected
+;; This results in a dotted list.
+(cons '(x y z) 'w)
+
+;; To add something to the end of a list, we need to use the APPEND function
+;; APPEND takes two lists
+(append '(x y z) '(w))
+;; APPEND is nondestructive
+
+(nth 2 '(x y z))
+
+(caddr '(x y z))
+(defun palindromep (x)
+  (equal x (reverse x)))
+
+(defun make-palindrome (x)
+  (append x (reverse x)))
+
+(make-palindrome '(x y z))
+;; MAKE-PALINDROME doesn't actually make a real perfect palindrome.
+;; Let's perfect it.
+
+(defun make-perfect-palindrome (x)
+  (append x (cdr (reverse x))))
+
+(make-perfect-palindrome '(x y z))
+
+;;; MEMBER
+;; MEMBER searches a list for an item. If it finds the item, it returns a sublist beginning with the item, with all of the remaining items in the list.
+;; Otherwise, it returns NIL.
+(setf letters '(a b c d e f g h i j k l m n o p q r s t u v w x y z))
+
+(member 'l letters)
+
+;; Useful?
+(defun beforep (x y l)
+  "Returns true if X appears before Y in L"
+  (member y (member x l)))
+
+;; INTERSECTION
+(intersection '() '(x y z))
+(defun contains-article-p (set)
+  (intersection '(a an the) set))
+
+(contains-article-p '(We hold these truths to be self-evident that all men are created equal))
+(contains-article-p '(A friend in need is a friend indeed))
+
+;; UNION
+(defun add-vowels (set)
+  (union set '(a e i o u)))
+
+;; SET-DIFFERENCE
+
+;; Importantly, SET-DIFFERENCE isn't symmetric.
+;; These produce different results
+(set-difference '(x y z) '(a b c z))
+(set-difference '(a b c z) '(x y z))
+(set-difference '() '(a b c))
+
+;; SUBSETP
+
+(subsetp '(a b c) letters)
+
+
+(set-difference '(a b c) '(b c a))
+(set-difference '(b c a) '(a b c))
+(defun set-equal (set1 set2)
+  (and (not (set-difference set1 set2))
+       (not (set-difference set2 set1))))
+
+(set-equal '(a b c) '(b c a))
+
+(defun proper-subsetp (set1 set2)
+  (and (or (subsetp set1 set2)
+           (subsetp set2 set1))
+       (not (set-equal set1 set2))))
+
+(proper-subsetp letters (reverse letters))
+
+;; ASSOC
+;; ASSOC is used for search a-lists
+;; association lists, otherwise known as tables, are lists with nested lists called entries that have two items each
+;;
+(setf words '((one ichi)
+              (two ni)
+              (three san)
+              (four shi)
+              (five go)))
+(assoc 'five words)
+(member 'five words)
+
+;; RASSOC
+;; RASSOC returns the entry in the table/alist whose cdr is equal to the search
+;; Note: it only works on dotted lists, not proper lists
+
+(rassoc 'ni words)
+(setf dwords '((one . ichi)
+               (two . ni)
+               (three . san)
+               (four . shi)
+               (five . go)))
+
+(rassoc 'ni dwords)
+(assoc 'two dwords)
+(equal (rassoc 'ni dwords) (assoc 'two dwords))
+
+(setf my-objects '((object1 large green shiny cube)
+                   (object2 small red dull metal cube)
+                   (object3 red small dull plastic cube)
+                   (object4 small dull blue metal cube)
+                   (object5 small shiny red four-sided pyramid)
+                   (object6 large shiny green sphere)))
+
+(defun description (x)
+  (rest (assoc x my-objects)))
+
+(defun differences (x y)
+  (set-exclusive-or (description x)
+                    (description y)))
+
+(differences 'object2 'object3)
+
+(setf quality-table
+      '((large . size)
+        (small . size)
+        (red . color)
+        (green . color)
+        (blue . color)
+        (shiny . luster)
+        (dull . luster)
+        (metal . material)
+        (plastic . material)
+        (cube . shape)
+        (sphere . shape)
+        (pyramid . shape)
+        (four-sided . shape)))
+(defun quality (x)
+  (cdr (assoc x quality-table)))
+
+(defun quality-differences (x y)
+  (quality (first (differences x y))))
+
+(differences 'object3 'object4)
+(quality-differences 'object3 'object4)
+(defun contrast (x y)
+  (remove-duplicates (sublis quality-table (differences x y))))
+
+(contrast 'object3 'object1)
+
+(length quality-table)
+
+(setf books '((hypermedia-systems . carson-gross)
+              (structures-and-interpretations-of-computer-programs . gerald-sussman)
+              (how-to-lose-at-almost-everything-and-still-win-big . scott-adams)
+              (the-beginning-of-infinity . david-deusch)
+              (a-journey-to-the-center-of-the-earth . jules-verne)))
+
+(defun who-wrote (book)
+  (cdr (assoc book books)))
+(who-wrote 'hypermedia-systems)
+
+(defun swap-first-last (x)
+  (let* ((first-el (car x))
+         (last-el (car (reverse x)))
+         (middle (remove first-el (remove last-el x))))
+    (append (append (list last-el) middle) (list first-el))))
+
+(defun rotate-left (x)
+  (let* ((first-el (car x))
+         (last-el (car (reverse x)))
+         (middle (remove first-el (remove last-el x))))
+    (append (list last-el) (append (list first-el) middle))))
+
+(rotate-left '(1 2 3 4 5))
+
+(defun rotate-right (x)
+  (let* ((first-el (car x))
+         (last-el (car (reverse x)))
+         (middle (remove first-el (remove last-el x))))
+    (append (append middle (list last-el)) (list first-el))))
+
+(rotate-right '(1 2 3 4 5))
+#+end_src
+
+**** 6.26 mini project: MEMBER REVERSE INTERSECTION
+#+begin_src lisp
+(setf descriptions '(large red shiny cube -vs- small shiny red four-sided pyramid))
+(defun right-side (set)
+  (cdr (member '-vs- set)))
+
+(defun left-side (set)
+  (right-side (reverse set)))
+
+(defun count-common (set)
+  (let ((right (right-side set))
+        (left (left-side set)))
+    (length (intersection right left))))
+
+(defun compare (set)
+  (list (count-common set) 'common 'features))
+
+(compare descriptions)
+
+#+end_src
+
+**** 6.35 mini keyboard exercise: circular lists
+#+begin_src lisp
+(setf nerd-states '(sleeping eating waiting-for-a-computer programming debugging))
+(setf circular-nerd-states '#1=(sleeping eating waiting-for-a-computer programming debugging . #1#))
+(setf (cdr (last nerd-states)) nerd-states)
+(setf *print-circle* t)
+
+
+(defun circular (x)
+  (setf (cdr (last x)) x)
+  x)
+
+
+(defun nerdus (current-state)
+  (if (member current-state nerd-states)
+      (cadr (member current-state nerd-states))
+      'welcome-to-the-infinity-hotel))
+
+(defun sleepless-nerd (current-state)
+  (if (equal 'debugging current-state)
+      (caddr (member current-state circular-nerd-states))
+      (cadr (member current-state circular-nerd-states))))
+
+(cadr (member 'debugging nerd-states))
+(sleepless-nerd 'debugging)
+#+end_src
+
+Functions covered:
+List functions: APPEND, REVERSE, NTH, NTHCDR, LAST, REMOVE
+Set functions: UNION, INTERSECTION, SET-DIFFERENCE, SET-EXCLUSIVE-OR, MEMBER, SUBSETP, REMOVE-DUPLICATES
+Table functions: ASSOC, RASSOC
+
+**** KEYBOARD EXERCISE: robbie the robot
+#+begin_src lisp
+(setf rooms '((living-room
+               (north front-stairs)
+               (east kitchen)
+               (south dining-room))
+              (kitchen
+               (south pantry)
+               (west living-room))
+              (pantry
+               (north kitchen)
+               (west dining-room))
+              (dining-room
+               (north living-room)
+               (west downstairs-bedroom))
+              (downstairs-bedroom
+               (north back-stairs)
+               (east dining-room))
+              (back-stairs
+               (north library)
+               (south downstairs-bedroom))
+              (library
+               (east upstairs-bedroom)
+               (south back-stairs))
+              (upstairs-bedroom
+               (south front-stairs)
+               (west library))
+              (front-stairs
+               (north upstairs-bedroom)
+               (south living-room))))
+(setf location 'pantry)
+
+(defun choices (room-name)
+  (cdr (assoc room-name rooms)))
+
+(defun look (direction from-room)
+  (cadr (assoc direction (choices from-room))))
+
+(defun set-robbie-location (room)
+  (setf location room))
+
+(defun how-many-choices ()
+  (length (choices location)))
+
+(defun upstairsp (location)
+  (or (equal location 'library)
+      (equal location 'upstairs-bedroom)))
+
+(defun onstairsp (location)
+  (or (equal location 'front-stairs)
+      (equal location 'back-stairs)))
+
+(defun where ()
+  (cond
+    ((upstairsp location) (format nil "Robbie is upstairs in the ~a." location))
+    ((onstairsp location) (format nil "Robbie is on the ~a" location))
+    (t (format nil "Robbie is downstairs in the ~a" location))))
+
+(defun move (direction)
+  (let ((valid-location (look direction location)))
+    (if valid-location
+        (set-robbie-location valid-location)
+        (format nil "That isn't a valid direction."))))
+#+end_src
+
+**** Advanced
+Functions covered:
+- Tree functions
+  SUBST, SUBLIS
+- Equality predicates
+  EQ EQL EQUAL EQUALP =
+- KEYWORDP
+
+Working with trees.
+
+SUBST, used for substituting list items anywhere in a tree (in other words, it isn't only limited to the top-level of a list).
+
+SUBLIS can do multiple substitutions in one operation.
+
+Will talk more about trees in chapter 8.
+
+Some list operations are more efficient than others. The less consing, and the less cdring, the more efficient.
+
+Lists can "share structure" if they contain the same cons cells.
+
+Good treatment of EQ, EQL, EQUAL, EQUALP, and =. General rule of thumb for beginners is to use EQUAL, understand built-in functions like MEMBER and ASSOC use EQL (and therefore may not work as you intend them to), and use = for numbers.
+
+EQ compares addresses in memory.
+
+:test keyword for MEMBER and other functions.
+
+*** ANALYSIS
+The 6.35 mini keyboard exercise is interesting because it introduced me to the circular list and how to use it. Very intersting since nothing like circular lists exist in Python. Lispers like recursion!
+
+The Advanced section is also very useful. Tree functions, equality, :test keyword, about efficiency, etc. all very useful. Starting to warm up to this book.
+
+Might be a good idea to cover all functions that have a :test keyword. "All list functions that include an equality test accept a :TEST keyword argument. REMOVE is another example."
+EQL won't be able to test nested lists against a list, but EQUAL can.
+** Applicative Programming
+*** FUNCTIONS COVERED
+FUNCALL, MAPCAR, FIND-IF, REMOVE-IF, REMOVE-IF-NOT, REDUCE, EVERY, FUNCTION
+
+"MAPCAR applies a function to every element of a list and returns a list of the results.
+
+FIND-IF searches a list and returns the first element that satisfies a predicate.
+
+REMOVE-IF removes all the elements of a list that satisfy a predicate, so the list it returns contains only those elements that fail to satisfy it.
+
+REMOVE-IF-NOT is used more frequently than REMOVE-IF. It returns all the elements that do satisfy the predicate, having removed those that don’t satisfy it.
+
+EVERY returns T only if every element of a list satisfies a predicate.
+
+REDUCE uses a reducing function to reduce a list to a single value."
+
+FUNCTION is used for making function oriented operators
+*** NOTES
+Applicative programming is based on the idea that functions are data. Functions should be passable as data and be returned as data.
+
+In other words, Applicative Programming is what we call Functional Programming.
+
+This sounds like a really interesting chapter already.
+
+#' can't be used to quote macro functions. Only works for ordinary functions.
+
+FUNCALL can call functions. MAPCAR can execute a function on every item in a list and returns a list of the results.
+
+#+begin_src lisp
+(funcall #'car '(a b c))
+
+(setf words '((one ichi)
+              (two ni)
+              (three san)
+              (four shi)
+              (five go)))
+
+(mapcar #'second words)
+
+(find-if #'oddp '(1 2 3 4 5 6 7 8 9))
+
+(defun roughly-equal (x k)
+  (find-if #'(lambda (y) (and (>= (+ k 10) y)
+                             (>= y (- k 10)))) x))
+
+(roughly-equal '(112 364 24 58 88 33 56 72) 80)
+
+(defun find-nested (x)
+  (find-if #'(lambda (item) (not (atom item))) x))
+
+(find-nested '(4 hello :what (this is nested) (so is this)))
+
+#+end_src
+**** 7.10 Mini Keyboard Exercise
+#+begin_src lisp
+(defparameter *note-table* '((c 1)
+                             (c-sharp 2)
+                             (d 3)
+                             (d-sharp 4)
+                             (e 5)
+                             (f 6)
+                             (f-sharp 7)
+                             (g 8)
+                             (g-sharp 9)
+                             (a 10)
+                             (a-sharp 11)
+                             (b 12)))
+
+(defun find-number (note)
+  (cadr (find-if #'(lambda (row) (equal (first row) note)) *note-table*)))
+
+(defun numbers (note-list)
+  (mapcar #'(lambda (note) (find-number note)) note-list))
+
+(numbers *note-table*)
+
+(defparameter *mary* '(e d c d e e e))
+
+(defun find-note (number)
+  (car (find-if #'(lambda (row) (equal (second row) number)) *note-table*)))
+
+(find-note 3)
+
+(defun notes (number-list)
+  (mapcar #'(lambda (number) (find-note number)) number-list))
+
+(defun raise (raise-by number-list)
+  (mapcar #'(lambda (number) (+ number raise-by)) number-list))
+
+(raise 5 (numbers *mary*))
+
+(defun normalize (numbers)
+  (mapcar #'(lambda (number) (if (> number 12)
+                                 (- number 12)
+                                 number)) numbers))
+
+(defun transpose (number song)
+  (notes (normalize (raise number (numbers song)))))
+#+end_src
+
+**** 7.8 Exercises
+#+begin_src lisp
+(defun between-one-and-five (numbers)
+  (remove-if-not #'(lambda (number) (and (> number 1)
+                                         (> 5 number))) numbers))
+(defun count-thes (words)
+  (length (remove-if-not #'(lambda (word) (equal 'the word)) words)))
+
+(count-thes '(the other day I met the neighbors kid that won the championship at the meet))
+
+(defun two-col-rows (table)
+  (remove-if-not #'(lambda (row) (= 2 (length row))) table))
+
+(two-col-rows '((the other day)
+                (I met a bear)
+                (a bear)
+                (a bear)
+                (a big brown bear)))
+#+end_src
+
+**** 7.15 Mini Keyboard Exercise
+#+begin_src lisp
+(defun rank (card)
+  (car card))
+
+(defun ranks (hand)
+  (mapcar #'(lambda (card) (rank card)) hand))
+
+(defun suit (card)
+  (cadr card))
+
+(defparameter *hand* '((3 hearts)
+                       (5 clubs)
+                       (2 diamonds)
+                       (ace spades)
+                       (4 diamonds)))
+
+(defun count-suit (suit hand)
+  (length (remove-if-not #'(lambda (card) (equal suit (suit card))) hand)))
+
+(count-suit 'spades *hand*)
+
+
+(defparameter *colors* '((clubs black)
+                         (diamonds red)
+                         (hearts red)
+                         (spades black)))
+
+(defun color-of (card)
+  (cadr (find-if #'(lambda (color) (equal (suit card) (car color))) *colors*)))
+
+(color-of '(3 hearts))
+
+
+(defun first-red (hand)
+  (find-if #'(lambda (card) (equal 'red (color-of card))) hand))
+
+(first-red *hand*)
+
+(defun black-cards (hand)
+  (remove-if-not #'(lambda (card) (equal (color-of card) 'black)) hand))
+
+(black-cards *hand*)
+
+(defun what-ranks (suit hand)
+  (mapcar #'(lambda (c) (rank c))
+          (remove-if-not #'(lambda (card) (equal (suit card) suit)) hand)))
+
+(defparameter *all-ranks* '(2 3 4 5 6 7 8 9 10 jack queen king ace))
+(setf *all-ranks* (reverse *all-ranks*))
+
+
+(defun power (rank)
+  (length (member rank *all-ranks*)))
+
+(defun higher-rank-p (first-card second-card)
+  (> (power (rank first-card)) (power (rank second-card))))
+
+(higher-rank-p '(ace spades) '(king hearts))
+
+(defun high-card (hand)
+  (find-if #'(lambda (rank) (member rank (ranks hand))) *all-ranks*))
+
+(high-card *hand*)
+
+(defun reduce-high-card (hand)
+  (reduce #'(lambda (x y) (if (higher-rank-p x y) x y)) hand))
+
+(reduce-high-card *hand*)
+#+end_src
+
+#+RESULTS:
+: REDUCE-HIGH-CARD
+
+**** 7.9 The Reduce Operator
+#+begin_src lisp
+(setf nested '((a b c) (c (d) e) (d e f g) (h)))
+
+(remove-duplicates (reduce #'append nested))
+
+(reduce #'union nested)
+#+end_src
+
+#+RESULTS:
+| G | F | E | D | B | A | C | H |
+
+***** 7.16
+Suppose we had a list of sets ((A B C) (C D A) (F B D) (G)) that we wanted to collapse into one big set. If we use APPEND for our reducing function, the result won’t be a true set, because some elements will appear more than once. What reducing function should be used instead?
+
+A: Union
+
+Interesting question. I wouldn't have thought of using the set functions like that.
+
+***** 7.17
+#+begin_src lisp
+(defun nested-length (nested)
+  (reduce #'+ (mapcar #'(lambda (list) (length list)) nested)))
+
+(defparameter *nested* '((a b) (c d) (e f)))
+
+(nested-length *nested*)
+#+end_src
+
+***** 7.19 - 7.23
+#+begin_src lisp
+(defun all-odd (num-list)
+  (every #'oddp num-list))
+
+(defun none-odd (num-list)
+  (every #'evenp num-list))
+
+(defun not-all-odd (num-list)
+  (not (all-odd num-list)))
+
+(defun not-none-odd (num-list)
+  (not (none-odd num-list)))
+
+(setf odd-nums '(1 3 5 7))
+
+(setf even-nums '(2 4 6 8))
+
+(setf nums '(1 2 3 4 5 6 7 8))
+
+(all-odd odd-nums)
+(all-odd even-nums)
+(all-odd nums)
+
+(none-odd odd-nums)
+(none-odd even-nums)
+(none-odd nums)
+
+(not-all-odd odd-nums)
+(not-all-odd even-nums)
+(not-all-odd nums)
+
+(not-none-odd odd-nums)
+(not-none-odd even-nums)
+(not-none-odd nums)
+#+end_src
+
+**** Keyboard Exercise
+#+begin_src lisp
+(setf database '((b1 shape brick)
+                 (b1 color green)
+                 (b1 size small)
+                 (b1 supported-by b2)
+                 (b1 supported-by b3)
+                 (b2 shape brick)
+                 (b2 color red)
+                 (b2 size small)
+                 (b2 supports b1)
+                 (b2 left-of b3)
+                 (b3 shape brick)
+                 (b3 color red)
+                 (b3 size small)
+                 (b3 supports b1)
+                 (b3 right-of b2)
+                 (b4 shape pyramid)
+                 (b4 color blue)
+                 (b4 size large)
+                 (b4 supported-by b5)
+                 (b5 shape cube)
+                 (b5 color green)
+                 (b5 size large)
+                 (b5 supports b4)
+                 (b6 shape brick)
+                 (b6 color purple)
+                 (b6 size large)))
+
+(defun match-element (sym1 sym2)
+  (or (equal sym1 sym2)
+      (equal '? sym2)))
+
+(defun match-triple (assertion pattern)
+  (and (match-element (first assertion)  (first pattern))
+       (match-element (second assertion) (second pattern))
+       (match-element (third assertion)  (third pattern))))
+
+(defun match-triple2 (assertion pattern)
+  (car (remove-duplicates (mapcar #'(lambda (ass-el pat-el) (match-element ass-el pat-el)) assertion pattern))))
+
+(match-triple '(b6 color purple) '(b6 ? purple))
+(match-triple2 '(b6 color purple) '(b6 ? purple))
+
+(defun fetch (db pattern)
+  (remove-if-not #'(lambda (row) (match-triple row pattern)) db))
+
+(fetch database '(? color ?))
+
+
+(defun color-of-pattern (block-name)
+  (list block-name 'color '?))
+
+(defun supported-by-pattern (block-name)
+  (list '? 'supports block-name))
+
+(defun supporters (block-name)
+  (mapcar #'(lambda (block) (first block)) (fetch database (supported-by-pattern block-name))))
+
+(supporters 'b1)
+
+(defun shape-of-pattern (block)
+  (list block 'shape '?))
+
+(defun shape-of (block)
+  (caddar (fetch database (shape-of-pattern block))))
+
+(defun supp-cube-p (block)
+  (mapcar
+   #'(lambda (supporter) (equal 'cube (shape-of supporter)))
+   (supporters block)))
+
+(supp-cube-p 'b4)
+
+(defun name-pattern (block-name)
+  (list block-name '? '?))
+
+
+(defun desc1 (block-name)
+  (fetch database (name-pattern block-name)))
+
+(desc1 'b6)
+
+(defun desc2 (block-name)
+  (mapcar #'(lambda (block) (cdr block)) (desc1 block-name)))
+
+(desc2 'b6)
+
+(defun description (block-name)
+  (reduce #'append (desc2 block-name)))
+
+(description 'b4)
+
+(union (append '((b6 material plastic)) (fetch database '(b6 ? ?))) database)
+#+end_src
+
+#+RESULTS:
+| B5 | SUPPORTS     | B4      |
+| B5 | SIZE         | LARGE   |
+| B5 | COLOR        | GREEN   |
+| B5 | SHAPE        | CUBE    |
+| B4 | SUPPORTED-BY | B5      |
+| B4 | SIZE         | LARGE   |
+| B4 | COLOR        | BLUE    |
+| B4 | SHAPE        | PYRAMID |
+| B3 | RIGHT-OF     | B2      |
+| B3 | SUPPORTS     | B1      |
+| B3 | SIZE         | SMALL   |
+| B3 | COLOR        | RED     |
+| B3 | SHAPE        | BRICK   |
+| B2 | LEFT-OF      | B3      |
+| B2 | SUPPORTS     | B1      |
+| B2 | SIZE         | SMALL   |
+| B2 | COLOR        | RED     |
+| B2 | SHAPE        | BRICK   |
+| B1 | SUPPORTED-BY | B3      |
+| B1 | SUPPORTED-BY | B2      |
+| B1 | SIZE         | SMALL   |
+| B1 | COLOR        | GREEN   |
+| B1 | SHAPE        | BRICK   |
+| B6 | MATERIAL     | PLASTIC |
+| B6 | SHAPE        | BRICK   |
+| B6 | COLOR        | PURPLE  |
+| B6 | SIZE         | LARGE   |
+
+**** Advanced
+***** 7.11 OPERATING ON MULTIPLE LISTS
+The function used by MAPCAR to map over lists can take multiple inputs. You can work on multiple lists in parallel! See MATCH-TRIPLE2 above.
+
+If one list is shorter than the other, the maping will stop at the end of the shortest list.
+
+***** 7.30
+#+begin_src lisp
+(setf words '((one ichi)
+              (two ni)
+              (three san)
+              (four shi)
+              (five go)))
+
+(setf spanish '(uno dos tres quatro cinco))
+
+(mapcar #'(lambda (row spanish-word) (append row (list spanish-word))) words spanish)
+#+end_src
+
+***** 7.12 THE FUNCTION SPECIAL FUNCTION
+' is shorthand for QUOTE, and #' is shorthand for FUNCTION.
+
+However, it returns the "functional interpretation" of its unevaluated argument.
+***** 7.13 KEYWORD ARGUMENTS TO APPLICATIVE OPERATORS
+FIND-IF, REMOVE-IF, REMOVE-IF-NOT, REDUCE | :FROM-END
+REMOVE-IF, REMOVE-IF-NOT | :COUNT
+MAPCAR and EVERY don't accept keywords, but they do accept variable number of lists
+***** 7.14 SCOPING AND LEXICAL CLOSURES
+The lambda expressions in this chapter are not simple functions, they are lexical closures. They refer to variables that don't originate or get pass directly to them.
+
+FETCH above is one example. The lambda expression refers to PATTERN, which isn't passed directly as an argument to the lambda.
+
+Another example:
+#+begin_src lisp
+(defun my-assoc (key table)
+  (find-if #'(lambda (entry)
+               ;; KEY isn't passed to this expression. When the lambda is evaluated,
+               ;; it looks for KEY in the lambda and can't find it, so it then searches
+               ;; it's lexical context, MY-ASSOC.
+               (equal key (first entry)))
+           table))
+#+end_src
+
+What this means is that you can't naively make a helper function to run EQUAL on KEY and the car of the ENTRY, because you wouldn't have the key as an argument to your function.
+#+begin_src lisp
+;; HELPER is outside MY-ASSOC's lexical context, so KEY can't be found.
+(defun helper (entry)
+  (equal key (first entry)))
+
+(defun my-assoc (key table)
+  (find-if #'helper table))
+#+end_src
+***** 7.15 WRITING AN APPLICATIVE OPERATOR
+Ooo, we are writing our own functional programming operators.
+
+#+begin_src lisp
+(defun sasageyo (fn list)
+  (reverse (funcall fn (reverse list))))
+
+(sasageyo #'(lambda (x) (cons 'please x)) '(dedicate your hearts))
+#+end_src
+
+#+RESULTS:
+| DEDICATE | YOUR | HEARTS | PLEASE |
+
+***** 7.16 FUNCTIONS THAT MAKE FUNCTIONS
+#+begin_src lisp
+(defun make-greater-than-predicate (n)
+             #'(lambda (x) (> x n)))
+
+(setf pred (make-greater-than-predicate 6))
+
+(find-if pred '(2 3 4 5 6 7 8 9 10))
+#+end_src
+
+#+RESULTS:
+: 7
+
+*** ANALYSIS
+Excellent chapter. The amount of practice it gave me working with function oriented programming was very useful. I'm much more confident in my ability to use REDUCE, MAPCAR, etc.
+
+Practicing with the exercises also helped me understand the correct order to write code in, as well.
+#+begin_src lisp
+(defun some-fun (x)
+  ;; first, what do you want the output to be? one item? a list?
+  ;; we want a list, so we don't want REDUCE
+  (remove-if-not )
+  )
+
+(defun some-fun (some-list)
+  (remove-if-not
+   ;; we want to run some boolean expression on some item...
+   #'(lambda (some-item-in-the-list))
+   ;; ...in the list
+   some-list))
+
+;; What do we want to do?
+
+(defun some-fun (some-list)
+  ;; check every item in the list to see if it is greater than 0
+  ;; REMOVE-IF-NOT will return all items in the list that conform to that condition
+  (remove-if-not #'(lambda (some-item-in-the-list) (> some-item-in-the-list 0)) some-list))
+
+(some-fun '(-5 -4 -3 -2 -1 0 1 2 3 4 5))
+#+end_src
+
+Additionally, the Advanced section explains how to work on two lists in parallel.
+#+begin_src lisp
+(defun do-stuff (list1 list2)
+  ;; Just pass two argument to the LAMBDA/function and then put both lists after it.
+  (mapcar #'(lambda (list1-item list2-item) (do-stuff list1-item list2-item)) list1 list2))
+#+end_src
+
+Importantly, I worked through many exercises where I did work I would usually loop over with for-loops in other languages.
+** Recursion
+*** FUNCTIONS COVERED
+LABELS
+*** NOTES
+Considerable review for me since I have worked through SICP a little, and it begins with recursion.
+**** 8.7 A RECURSIVE FUNCTION FOR COUNTING SLICES OF BREAD
+#+begin_src lisp
+(defun count-slices (loaf)
+  (cond ((null loaf) 0)
+        (t (+ 1 (count-slices (rest loaf))))))
+
+(count-slices '(slice slice slice slice slice))
+#+end_src
+
+**** 8.8 THE THREE RULES OF RECURSION
+***** 8.4
+#+begin_src lisp
+(defun laugh (n)
+  (cond ((= 0 n) nil)
+        (t (cons 'ha (laugh (- n 1))))))
+
+(laugh 50)
+#+end_src
+
+***** 8.5
+#+begin_src lisp
+(defun add-up (nums)
+  (cond ((null (first nums)) 0)
+        (t (+ (first nums) (add-up (rest nums))))))
+
+(add-up '(13 14 15))
+#+end_src
+
+***** 8.6
+#+begin_src lisp
+(defun alloddp (nums)
+  (cond ((null nums) t)
+        ((evenp (first nums)) nil)
+        (t (alloddp (rest nums)))))
+#+end_src
+***** 8.7
+#+begin_src lisp
+(defun rec-member (item list)
+  (cond ((null item) nil)
+        ((equal item (car list)) list)
+        (t (rec-member item (rest list)))))
+
+(rec-member 'san '(go shi san ni ichi))
+#+end_src
+
+***** 8.8
+#+begin_src lisp
+(defun rec-assoc (item table)
+  (cond ((null table) nil)))
+#+end_src
+**** 8.11 RECURSION TEMPLATES
+Double-Test Tail Recursion
+Single-Test Tail Recursion
+Augmenting Recursion
+**** 8.12 VARIATIONS ON THE BASIC TEMPLATES
+***** 8.12.1 List-Consing Recursion
+#+begin_src lisp
+(defun count-down (num)
+  (cond ((= 0 num) nil)
+        (t (cons num (count-down (- num 1))))))
+
+(defun fact (n)
+  (cond ((zerop n) 1)
+        (t (* n (fact (- n 1))))))
+
+(defun fun-fact (n)
+  (reduce #'* (count-down n)))
+
+(defun square-list (nums)
+  (cond ((null nums) nil)
+        (t (cons (* (first nums) (first nums))
+                 (square-list (rest nums))))))
+
+(square-list '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20))
+#+end_src
+***** 8.12.2 Simultaneous Recursion on Several Variables
+****** 8.28
+#+begin_src lisp
+(defun my-nth (n x)
+  (cond ((zerop n) (first x))
+        ((null (rest x)) nil)
+        (t (my-nth (- n 1) (rest x)))))
+#+end_src
+
+****** 8.29
+#+begin_src lisp
+(defun my-member (item list)
+  (cond ((null list) nil)
+        ((equal item (first list)) list)
+        (t (my-member item (rest list)))))
+(my-member 'a '(a b c))
+#+end_src
+****** 8.30
+#+begin_src lisp
+(defun my-assoc (key table)
+  (cond ((null table) nil)
+        ((equal key (caar table)) (car table))
+        (t (my-assoc key (rest table)))))
+
+(defparameter *table* '((1 one)
+                        (2 two)
+                        (3 three)))
+
+(my-assoc 1 *table*)
+#+end_src
+
+****** 8.31
+#+begin_src lisp
+(defun compare-lengths (list1 list2)
+  (cond ((and (null (cdr list1))
+              (null (cdr list2)) 'same-length))
+        ((null (cdr list1)) 'second-is-longer)
+        ((null (cdr list2)) 'first-is-longer)
+        (t (compare-lengths (rest list1) (rest list2)))))
+(compare-lengths '(1 2 3 4) '(1 2 3))
+#+end_src
+
+***** 8.12.3 Conditional Augmentation
+****** 8.32
+#+begin_src lisp
+(defun sum-numeric-elements (list)
+  (cond ((null list) 0)
+        ((not (numberp (car list))) (sum-numeric-elements (cdr list)))
+        (t (+ (car list) (sum-numeric-elements (cdr list))))))
+(sum-numeric-elements '(2 girls 1 father 0 funny-business))
+#+end_src
+
+***** 8.12.4 Multiple Recursion
+***** 8.13 TREES AND CAR/CDR RECURSION
+#+begin_quote
+Suppose we want a function FIND-NUMBER to search a tree and return the first number that appears in it, or NIL if there are none. Then we should use NUMBERP and ATOM as our end tests and OR as the combiner.
+#+end_quote
+
+#+begin_src lisp
+(defun find-number (x)
+  (cond ((numberp x) x)
+        ((atom x) nil)
+        (t (or (find-number (car x))
+               (find-number (cdr x))))))
+#+end_src
+
+If you want to use functional programming operators to do a single test on a single cons cell, then the code looks like this:
+#+begin_src lisp
+(mapcar #'(lambda (x) (cond ((numberp x) x)
+                            ((atom x) nil)
+                            ((consp x) 'it-is-a-cons))) some-cons-cell)
+#+end_src
+
+The important part here is that we can keep climbing up the tree until we get to the ends of the branches, which are all cons cells. So, to check both using recursion and to climb up the tree, a CAR/CDR recursion, where we run the function on the CAR and on the CDR, can replace the MAPCAR, and the CONSP check can be replaced with the recursion.
+
+There interesting part here is the OR combiner. The important part, as mentioned in the book, is that OR stops evaluating when a test returns true. As soon as a number is found in the car of a cons cell, the recursion will end.
+
+
+****** 8.39
+#+begin_src lisp
+(defun count-atoms (x)                  ; X can be a tree, a CONS cell, a CAR of the CONS cell, or ending CDR (an emptry list) of the CONS cell
+  (cond ((null x) 0)
+    ((atom x) (print x) 1)
+    (t (+ (count-atoms (car x))
+          (count-atoms (cdr x))))))
+
+(count-atoms '(hello (my name) is ((Micah ((Killian))))))
+#+end_src
+
+#+RESULTS:
+: 12
+
+****** 8.40
+#+begin_src lisp
+(defun count-cons (x)
+  (cond
+    ((atom x) 0)
+    (t (+ 1 (count-cons (car x))
+          (count-cons (cdr x))))))
+
+(and (= (count-cons '(a)) 1)
+     (= (count-cons '(a b)) 2)
+     (= (count-cons '((b))) 2)
+     (= (count-cons '(a (b) c)) 4))
+
+(list   (count-cons '(a)) (count-cons '(a b)) (count-cons '((b))) (count-cons '(a (b) c)))
+
+(count-cons '(a (b) c))
+#+end_src
+
+****** 8.41
+#+begin_src lisp
+(defun sum-tree (x)
+  (cond ((null x) 0)
+        ((numberp x) x)
+        ((atom x) 0)
+        (t (+ (sum-tree (car x))
+              (sum-tree (cdr x))))))
+
+(sum-tree '(1 2 (buckle my shoe (3 4 (lets count some more) 5 (6) pick) up sticks)))
+#+end_src
+****** 8.42
+#+begin_src lisp
+(defun my-subst (query substitute x)
+  (cond ((null x) nil)
+        ((equal query x) substitute)
+        ((atom x) x)
+        (t (cons (my-subst query substitute (car x))
+                 (my-subst query substitute (cdr x))))))
+
+
+(my-subst '1 'one '(5 (4 3 ((2 1)))))
+#+end_src
+
+****** 8.43
+#+begin_src lisp
+(defun flatten (x)
+  (cond ((null x) nil)
+        ((atom x) (list x))
+        (t (append (flatten (car x))
+                   (flatten (cdr x))))))
+
+(flatten '(5 (4 3 ((2 1)))))
+#+end_src
+
+***** 8.14 USING HELPING FUNCTIONS
+#+begin_src lisp
+(defun count-up (num)
+  (_count-up 1 num))
+
+(defun _count-up (count end)
+  (cond ((> count end) nil)
+        (t (cons count (_count-up (1+ count) end)))))
+
+(count-up 100)
+#+end_src
+****** 8.46
+#+begin_src lisp
+(defun count-up (num)
+  (cond ((= 0 num) nil)
+        (t (append (count-up (- num 1)) (list num)))))
+(count-up 5)
+#+end_src
+****** 8.48
+#+begin_src lisp
+(defun bury (symbol num)
+  (if (= 0 num)
+      symbol
+      (cons (bury symbol (1- num)) nil)))
+(bury 'biden 5)
+#+end_src
+
+****** 8.49
+#+begin_src lisp
+(defun pairings (x y)
+  (cond ((null x) nil)
+        ((null y) nil)
+        (t (cons (list (car x) (car y)) (pairings (cdr x) (cdr y))))))
+
+(pairings '(1 2 3) '(x y z))
+#+end_src
+
+****** 8.50
+#+begin_src lisp
+(defun sublists (x)
+  (cond ((null x) nil)
+       (t (cons x (sublists (cdr x))))))
+
+(sublists '(心臓 を 捧げよう))
+#+end_src
+**** KEYBOARD EXERCISE
+#+begin_src lisp
+(defparameter family
+      '((colin nil nil)
+        (deirdre nil nil)
+        (arthur nil nil)
+        (kate nil nil)
+        (frank nil nil)
+        (linda nil nil)
+        (suzanne colin deirdre)
+        (bruce arthur kate)
+        (charles arthur kate)
+        (david arthur kate)
+        (ellen arthur kate)
+        (george frank linda)
+        (hillary frank linda)
+        (andre nil nil)
+        (tamara bruce suzanne)
+        (vincent bruce suzanne)
+        (wanda nil nil)
+        (ivan george ellen)
+        (julie george ellen)
+        (marie george ellen)
+        (nigel andre hillary)
+        (frederick nil tamara)
+        (zelda vincent wanda)
+        (joshua ivan wanda)
+        (quentin nil nil)
+        (robert quentin julie)
+        (olivia nigel marie)
+        (peter nigel marie)
+        (erica nil nil)
+        (yvette robert zelda)
+        (diane peter erica)))
+
+(defun match-element (sym1 sym2)
+  (or (equal sym1 sym2)
+      (null sym2)))
+
+(defun match-triple (assertion pattern)
+  (every #'(lambda (ass-el pat-el) (match-element ass-el pat-el)) assertion pattern))
+
+(match-triple '(tamara bruce suzanna) '(tamara nil nil))
+
+(defun fetch (db pattern)
+  (first (remove-if-not #'(lambda (row) (match-triple row pattern)) db)))
+
+(defun father (child)
+  (second (fetch family (list child nil nil))))
+
+(father 'charles)
+
+(defun mother (child)
+  (third (fetch family (list child nil nil))))
+
+(mother 'charles)
+
+(defun parents (child)
+  (cdr (fetch family (list child nil nil))))
+
+(parents 'charles)
+
+(defun children (parent)
+  (union (fetch family (list nil parent nil))
+         (fetch family (list nil nil parent))))
+
+(children 'kate)
+
+(defun siblings (child)
+  (mapcar #'first
+          (remove-if-not
+           #'(lambda (row)
+               (and (or (equal (second row) (father child))
+                        (equal (third row) (mother child)))
+                    (not (equal (first row) child))))
+           family)))
+
+(siblings 'david)
+
+(defun mapunion (fn sequences)
+  (reduce #'union (mapcar fn sequences)))
+
+(reduce #'union (mapcar #'rest '((a b c) (1 2 3) (あ い う))))
+(mapunion #'rest '((a b c) (1 2 3) (あ い う)))
+
+(defun grandparents (child)
+  (mapunion #'(lambda (parent) (parents parent)) (parents child)))
+
+
+(defun cousins (child)
+  (let* ((the-parents (parents child))
+         (the-siblings (mapunion #'(lambda (parent) (siblings parent)) the-parents)))
+    the-siblings))
+
+(cousins 'zelda)
+
+(defun descended-from (first-person second-person)
+  (cond ((null first-person) nil)
+        ((or (equal second-person (father first-person))
+             (equal second-person (mother first-person))) t)
+        (t (or (descended-from (father first-person) second-person)
+               (descended-from (mother first-person) second-person)))))
+
+(descended-from 'tamara 'arthur)
+
+(defun ancestors (child)
+  (remove-if #'null (_ancestors child (parents child))))
+
+(defun _ancestors (child ancestors)
+  (cond ((null child) nil)
+        (t (append (list (father child))
+                   (list (mother child))
+                   (_ancestors (father child) (parents (father child)))
+                   (_ancestors (mother child) (parents (mother child)))))))
+
+(ancestors 'marie)
+
+;; Answer to ANCESTORS
+;; So jealous.
+
+(defun ancestors (x)
+  (cond ((null x) nil)
+        (t (union
+            (parents x)
+            (union (ancestors (father x))
+                   (ancestors (mother x)))))))
+
+(defun generation-gap (child ancestor)
+  (_generation-gap 0 child ancestor))
+
+(defun _generation-gap (count child ancestor)
+  (cond ((null child) nil)
+        ((equal child ancestor) count)
+        (t (or (_generation-gap (1+ count) (father child) ancestor)
+               (_generation-gap (1+ count) (mother child) ancestor)))))
+
+(generation-gap 'frederick 'linda)
+#+end_src
+
+***** ADVANCED
+Tail recursion is more efficient than regular recursion. A common technique for producing tail recursion is to use a helper function and a counter.
+
+#+begin_src lisp
+(defun tail-count-slices (slices)
+  (_tail-count-slices 0 slices))
+
+(defun _tail-count-slices (count slices)
+  (cond ((null slices) count)
+        (t (_tail-count-slices (1+ count) (rest slices)))))
+
+(tail-count-slices '(slice slice slice slice slice slice))
+#+end_src
+
+This is essentially the thing SICP teaches at the beginning. Sussman and Ableson distinguish between recursive functions that use recursive processes, and recursive process that use iterative processes.
+
+****** 8.16 ADVANTAGES OF TAIL RECURSION
+****** 8.17 WRITING NEW APPLICATIVE OPERATORS
+****** 8.18 THE LABELS SPECIAL FUNCTION
+****** 8.19 RECURSIVE DATA STRUCTURES
+
+***** TODO [#C] Do the advanced exercises.
+
+*** ANALYSIS
+A very good chapter that helped me get a better grip on recursion, although I still find it difficult. I struggle with recursion, so I think I need to drill this chapter.
+** Input/Output
+*** FUNCTIONS COVERED
+FORMAT, ~&, ~S, ~A, READ, YES-OR-NO-P, Y-OR-N-P, STRINGP, WITH-OPEN-FILE
+TERPRI PRIN1 PRINC ~F ~D "prefix parameters"
+*** NOTES
+**** 9.1 INTRODUCTION
+**** 9.2 CHARACTER STRINGS
+Finally, strings are introduced. Strangely, in the I/O section.
+**** 9.3 THE FORMAT FUNCTION
+#+begin_src lisp
+(format nil "Hello, my name is ~a" "Micah")
+#+end_src
+
+#+RESULTS:
+: Hello, my name is Micah
+
+#+begin_src lisp
+(format nil "Hello, my name is ~s" "Micah")
+#+end_src
+
+#+RESULTS:
+: Hello, my name is "Micah"
+***** 9.1
+***** 9.2
+#+begin_src lisp
+(defun draw-line (num)
+  (cond ((= num 0) (format t "~%"))
+        (t (format t "*")
+           (draw-line (1- num)))))
+
+(draw-line 10)
+#+end_src
+***** 9.3
+#+begin_src lisp
+(defun draw-box (x y)
+  (cond ((= y 0) nil)
+        (t (draw-line x)
+           (draw-box x (1- y)))))
+
+(draw-box 7 4)
+#+end_src
+
+
+***** 9.4
+Did this with the beer song Exercism exercise.
+#+begin_src lisp
+(defun sing (n)
+  "Returns a string verse for a given number."
+  (cond ((> n 2) (format t "~&~a bottles of beer on the wall, ~a bottles of beer.~&Take one down and pass it around, ~a bottles of beer on the wall.~%" n n (1- n)) (sing (1- n)))
+        ((= n 2) (format t "~&~a bottles of beer on the wall, ~a bottles of beer.~&Take one down and pass it around, ~a bottle of beer on the wall.~%" n n (1- n)) (sing (1- n)))
+        ((= n 1) (format t "~&~a bottle of beer on the wall, ~a bottle of beer.~&Take it down and pass it around, no more bottles of beer on the wall.~%" n n) (sing (1- n)))
+        ((< n 1) (format t "~&No more bottles of beer on the wall, no more bottles of beer.~&Go to the store and buy some more, 99 bottles of beer on the wall.~%"))))
+
+(sing 5)
+#+end_src
+
+*****  9.5
+#+begin_src lisp
+(defun print-line (board)
+  (format t " ~a | ~a | ~a~%" (first board) (second board) (third board)))
+
+(defun print-board (board)
+  (let ((human-board (sublis '((x . "X")
+                               (o . "O")
+                               (nil . " ")) board)))
+    (format t "~%")
+    (print-line human-board)
+    (format t "-----------~%")
+    (print-line (nthcdr 3 human-board))
+    (format t "-----------~%")
+    (print-line (nthcdr 6 human-board))))
+
+
+(print-board *board*)
+#+end_src
+**** 9.4 THE READ FUNCTION
+***** 9.6
+#+begin_src lisp
+(defun compute-gross-pay ()
+  (format t "What is your hourly pay in yen?~%")
+  (let ((pay (read)))
+    (format t "Pay is: ~a per hour~%" pay)
+    (format t "How many hours did you work?~%")
+    (let ((hours (read)))
+      (format t "Work time: ~a~%" hours)
+      (format t "Your gross pay is: ~a~%" (* pay hours)))))
+
+(compute-gross-pay)
+#+end_src
+***** 9.7
+#+begin_src lisp
+(defun cookie-monster ()
+  (format t "Give me cookie!~%")
+  (let ((item (string-downcase (read))))
+    (format t "You gave: ~a~%" item)
+    (cond ((string-equal item "cookie")
+           (format t "Thank you!....Yum yum yum~%"))
+          (t
+           (format t "No want ~a~%" item)
+           (cookie-monster)))))
+
+(cookie-monster)
+#+end_src
+
+**** 9.5 THE YES-OR-NO-P FUNCTION (y-or-n-p)
+**** 9.6 READING FILES WITH WITH-OPEN-FILE
+**** 9.7 WRITING FILES WITH WITH-OPEN-FILE
+Add keywords :DIRECTION :OUTPUT to the argument list.
+
+
+*** KEYBOARD EXERCISE
+#+begin_src lisp
+(defun space-over (n)
+  (cond ((null n) nil)
+        ((= n 0) nil)
+        ((< n 0) (format t "Error!"))
+        (t (format t " ")
+           (space-over (1- n)))))
+
+(defun test-space-over (n)
+  (format t "~%>>>")
+  (space-over n)
+  (format t "<<<"))
+
+(defun plot-one-point (string y)
+  (space-over y)
+  (format t "~a~&" string))
+
+(defun plot-points (string nums)
+  (mapcar #'(lambda (num) (plot-one-point string num)) nums))
+
+
+(defun generate (m n)
+  (cond ((> m n) nil)
+        (t (cons m (generate (1+ m) n)))))
+
+(defun make-graph ()
+  (format t "Function: ~%")
+  (let ((func (read)))
+    (format t "Start: ~%")
+    (let ((start (read)))
+      (format t "End: ~%")
+      (let ((end (read)))
+        (format t "Plotting string: ~%")
+        (let ((string (read)))
+          (plot-points string (mapcar #'(lambda (num) (funcall func num)) (generate start end))))))))
+
+(defun square (n)
+  (* n n))
+#+end_src
+*** ADVANCED
+**** 9.8 PARAMETERS TO FORMAT DIRECTIVES
+~ num S to make columns
+The num is called a "prefix parameter"
+~D decimal
+~F floating point
+
+***** EXERCISES
+#+begin_src lisp
+(defun dot (tree)
+  (cond ((atom tree) (format t "~a" tree))
+        (t (format t "(")
+           (dot (car tree))
+           (format t " . ")
+           (dot (cdr tree))
+           (format t ")"))))
+
+(dot abc)
+#+end_src
+
+*** ANALYSIS
+Good, brief chapter.
+** Assignment
+*** FUNCTIONS COVERED
+SETF INCF DECF WHEN UNLESS
+NCONC DELETE NUNION NINTERSECTION NSUBST NSET-DIFFERENCE NREVERSE SETQ
+*** NOTES
+In MAKE-GRAPH above, I used multiple nested LET statements to build up the necessary information to create the graph.
+However, there is a more elegant solution given in this chapter
+#+begin_src lisp
+(defun make-graph ()
+  (format t "Function: ~%")
+  (let ((func (read)))
+    (format t "Start: ~%")
+    (let ((start (read)))
+      (format t "End: ~%")
+      (let ((end (read)))
+        (format t "Plotting string: ~%")
+        (let ((string (read)))
+          (plot-points string (mapcar #'(lambda (num) (funcall func num)) (generate start end))))))))
+
+
+(defun elegant-make-graph ()
+  (let ((func nil)
+        (start nil)
+        (end nil)
+        (string nil))
+    (format t "Function: ~%")
+    (setf func (read))
+
+    (format t "Start: ~%")
+    (setf start (read))
+
+    (format t "End: ~%")
+    (setf end (read))
+
+    (format t "Plotting string: ~%")
+    (setf string (read))
+
+    (plot-points string (mapcar #'(lambda (num (funcall func num)) (generate start end))))))
+#+end_src
+
+The advantage is that we can declare at the beginning that we are going to be using four different variables, and are likely going to reassign their values somewhere. It also reduces visual clutter, a must in any language but especially in CL.
+
+WHEN and UNLESS let you evaluate multiple expressions in the body and return only the value of the last expression.
+
+"The first argument to SETF, INCF, DECF, PUSH, or POP is treated as a place description."
+**** TIC-TAC-TOE
+#+begin_src lisp
+(defun make-board ()
+  (list 'board 0 0 0 0 0 0 0 0 0))
+
+(defun convert-to-letter (v)
+  (cond ((equal v 1) "O")
+        ((equal v 10) "X")
+        (t " ")))
+
+(defun print-row (x y z)
+  (format t "~&  ~a | ~a | ~a"
+          (convert-to-letter x)
+          (convert-to-letter y)
+          (convert-to-letter z)))
+
+(defun print-board (board)
+  (format t "~%")
+  (print-row
+   (nth 1 board) (nth 2 board) (nth 3 board))
+  (format t "~&-------------")
+  (print-row
+   (nth 4 board) (nth 5 board) (nth 6 board))
+  (format t "~&-------------")
+  (print-row
+   (nth 7 board) (nth 8 board) (nth 9 board))
+  (format t "~&~&"))
+(setf *b* (make-board))
+
+(print-board *b*)
+
+(defun make-move (player pos board)
+  (setf (nth pos board) player)
+  board)
+
+(defparameter *human* 1)
+(defparameter *computer* 10)
+
+(defparameter *triplets* '((1 2 3) (4 5 6) (7 8 9) (1 5 9) (3 5 7) (1 4 7) (2 5 8) (3 6 9)))
+
+(defun sum-triplet (board triplet)
+  (+ (nth (first triplet) board)
+     (nth (second triplet) board)
+     (nth (third triplet) board)))
+
+(defun compute-sums (board)
+  (mapcar #'(lambda (triplet) (sum-triplet board triplet)) *triplets*))
+
+(defun winner-p (board)
+  (let ((sums (compute-sums board)))
+    (or (member (* 3 *human*) sums)
+        (member (* 3 *computer*) sums))))
+
+(defun tie-p (board)
+  (not (member 0 board)))
+
+(defun play-one-game ()
+  (if (y-or-n-p "Would you like to go first?")
+      (human-move (make-board))
+      (computer-move (make-board))))
+
+(defun human-move (board)
+  (let* ((move (read-legal-move board))
+         (updated-board (make-move *human* move board)))
+    (cond ((winner-p updated-board) (format t "~&You win!"))
+          ((tie-p updated-board) (format t "~&It's a tie."))
+          (t (computer-move updated-board)))))
+
+(defun read-legal-move (board)
+  (print-board board)
+  (format t "Make a move.~&")
+  (let ((move (read)))
+    (cond ((not (and (integerp move)
+                     (<= 1 move 9)))
+           (format t "Invalid move. Try again")
+           (print-board board)
+           (read-legal-move board))
+          ((not (= 0 (nth move board)))
+           (format t "That space is occupied. Try again.")
+           (print-board board)
+           (read-legal-move board))
+          (t move))))
+
+(defun computer-move (board)
+  (let* ((best-move (choose-best-move board))
+         (move (first best-move))
+         (strategy (second best-move))
+         (updated-board
+           (make-move *computer*
+                      move
+                      board)))
+    (format t "~&My move: ~a~%" move)
+    (format t "~&My strategy: ~a~%" strategy)
+    (print-board updated-board)
+    (cond ((winner-p updated-board) (format t "I win, loser!"))
+          ((tie-p updated-board) (format t "A tie? This game sucks."))
+          (t (human-move updated-board)))))
+
+
+(defun choose-best-move (board)
+  (or (make-three-in-a-row board)
+      (block-opponent-win board)
+      (block-squeeze-play board)
+      (block-two-on-one board)
+      (random-move-strategy board)))
+
+(defun random-move-strategy (board)
+  (list (pick-random-empty-position board)
+        "random move"))
+
+(defun pick-random-empty-position (board)
+  (let ((move (+ 1 (random 9))))
+    (if (= 0 (nth move board))
+        move
+        (pick-random-empty-position board))))
+
+
+(defun make-three-in-a-row (board)
+  (let ((move (win-or-block board
+                            (* 2 *computer*))))
+    (and move (list move "make three in a row"))))
+
+(defun block-opponent-win (board)
+  (let ((move (win-or-block board
+                            (* 2 *human*))))
+    (and move (list move "block opponent"))))
+
+(defun win-or-block (board target-sum)
+  (let ((target-triplet
+          (find-if
+           #'(lambda (triplet)
+               (= target-sum
+                  (sum-triplet board
+                               triplet)))
+           ,*triplets*)))
+    (when target-triplet
+      (find-empty-position board target-triplet))))
+
+(defun find-empty-position (board squares)
+  (find-if
+   #'(lambda (square) (= 0 (nth square board)))
+   squares))
+
+
+;; Advanced section modifications
+(defparameter *corners* '(1 3 7 9))
+(defparameter *sides* '(1 2 3 4 6 7 8 9))
+
+(defparameter *squeeze* (list 'board 1 0 0 0 10 0 0 0 1))
+(defparameter *two-on-one* (list 'board 10 0 0 0 1 0 0 0 1))
+
+(defun block-squeeze-play (board)
+  (let ((move (detect-squeeze board
+                              (+ *computer* (* 2 *human*)))))
+    (and move (list move "block squeeze play"))))
+
+(defun block-two-on-one (board)
+  (let ((move (detect-two-on-one board
+                              (+ *computer* (* 2 *human*)))))
+    (and move (list move "block two-on-one play"))))
+
+(defun diagonal-p (triplet)
+  (every #'(lambda (item) (or (member item *corners*)
+                              (= item 5))) triplet))
+
+(defun side-empty-p (board)
+  (find-empty-position board *sides*))
+
+(defun human-in-middle-p (board)
+  (equal (nth 5 board) *human*))
+
+(defun detect-squeeze (board target-sum)
+  (let ((squeeze-p
+          (find-if
+           #'(lambda (triplet)
+               (and (= target-sum
+                       (sum-triplet board
+                                    triplet))
+                    (diagonal-p triplet)
+                    (not (human-in-middle-p board))
+                    (side-empty-p board)))
+           ,*triplets*)))
+    (when squeeze-p
+      (find-empty-position board *sides*))))
+
+(defun detect-two-on-one (board target-sum)
+  (let ((two-on-one-p
+          (find-if
+           #'(lambda (triplet)
+               (and (= target-sum
+                       (sum-triplet board
+                                    triplet))
+                    (diagonal-p triplet)
+                    (human-in-middle-p board)
+                    (side-empty-p board)))
+           ,*triplets*)))
+    (when two-on-one-p
+      (find-empty-position board *corners*))))
+
+(detect-two-on-one *two-on-one* 12)
+
+
+#+end_src
+
+
+
+"Assignment is used only sparingly in Lisp programs... Assignment-free programs are considered very elegant."
+
+A combination of LET, applicative operators (functional programming operators) and tail-recursion make assignment much less necessary.
+**** TODO [#C] Finish the final problem in the tic-tac-toe exercise (to create attacking strategies)
+
+**** REVIEW EXERCISES
+***** 10.5
+#+begin_src lisp
+(defun ugly (x y)
+  (when (> x y)
+    (setf temp y)
+    (setf y x)
+    (setf x temp))
+  (setf avg (/ (+ x y) 2.0))
+  (setf pct (* 100 (/ avg y)))
+  (list 'average avg 'is
+         pct 'percent 'of 'max y))
+
+(ugly 20 2)
+
+(defun clean (x y)
+  (let* ((avg (/ (+ x y) 2.0))
+         (max (if (> x y)
+                  x
+                  y))
+         (pct (* 100 (/ avg max))))
+    (list 'average avg 'is pct 'percent 'of 'max max)))
+
+(clean 2 20)
+#+end_src
+***** 10.6
+***** 10.7
+
+**** ADVANCED
+See: Tic tac toe
+*** ANALYSIS
+The tic-tac-toe game is very enlightening for a few reasons.
+1. Instead of trying to save Xs and Ox in a 2d array, he simply saves all the spaces in a flat list. A database of winning triplets is used to check win status and *potential* win status.
+2. Using a flat array of numbers that only have the meaning we assign to them (either as human or computer-occupied spaces) makes finding winning or potentially winning triplets very easy.
+3. Making an impossible to beat computer is easy.
+
+The tutorial by [[https://github.com/nmunro/cl-tutorials/blob/main/4a-tic-tac-toe/src/main.lis][Neil Munro]] uses 2d arrays for the board, and uses strings for empty, X, and O, making searching for a win condition much more tedious (see game-over-p).
+The power of mathematical thinking.
+
+** Iteration and Block Structure
+*** FUNCTIONS COVERED
+DOLIST DOTIMES DO DO* RETURN RETURN-FROM BLOCK
+PROG1 PROG2 PROGN
+&optional &key &rest &aux
+*** EXERCISES
+**** 11.1
+#+begin_src lisp
+(defun it-member (item list)
+  (dolist (i list nil)
+    (when (equal i item)
+      (return t))))
+
+(it-member 'red '(green red blue yellow orange pink black purple))
+#+end_src
+
+#+RESULTS:
+: T
+**** 11.2
+#+begin_src lisp
+(defun it-assoc (item table)
+  (dolist (row table nil)
+    (when (equal item (first row))
+      (return row))))
+
+(it-assoc 'large '((small shiny blue)
+                   (large dull gray)
+                   (small dull red)))
+#+end_src
+**** 11.3
+#+begin_src lisp
+(defun check-all-odd (list-of-numbers)
+  (dolist (e list-of-numbers t)
+    (format t "~&Checking ~s..." e)
+    (if (not (oddp e))
+        (return nil))))
+
+(defun recursive-cao (x)
+  (cond ((null x) t)
+        ((not (numberp (first x))) 'not-a-number)
+        ((not (oddp (first x))) nil)
+        (t (format t "~& Checking ~s..." (first x))
+           (recursive-cao (rest x)))))
+
+(recursive-cao '(1 3 5 hello))
+#+end_src
+**** 11.4
+#+begin_src lisp
+(defun it-length (list)
+  (let ((len 0))
+    (dolist (i list len)
+      (incf len))))
+
+(it-length '(red blue grefen))
+#+end_src
+**** 11.5
+#+begin_src lisp
+(defun it-nth (n list)
+  (let ((count 0))
+    (dolist (i list i)
+      (if (= count n)
+          (return i)
+          (incf count)))))
+
+(it-nth 2 '(red green blue yellow))
+#+end_src
+
+**** 11.6
+#+begin_src lisp
+(defun it-union (list1 list2))
+#+end_src
+
+
+**** 11.9
+#+begin_src lisp
+(defun do-cao (list)
+  (do ((num-list list (rest num-list)))
+      ((null num-list) t)
+    (when (not (oddp (first num-list)))
+      (return nil))))
+
+(do-cao '(1 3 5))
+#+end_src
+**** 11.11
+#+begin_src lisp
+(defun find-largest (nums)
+  (do* ((num nums (rest num))
+        (largest (first num)))
+       ((null num) largest)
+    (when (> (first num) largest)
+      (setf largest (first num)))))
+
+(find-largest '(1 3 90 7))
+#+end_src
+**** 11.12
+#+begin_src lisp
+(defun power-of-2 (n)
+  (do ((num n (+ num num)))
+      (())))
+#+end_src
+**** KEYBOARD EXERCISE
+#+begin_src lisp
+(defparameter *strand* '(a c t g))
+(defun complement-base (base)
+  (second
+   (assoc base '((a t) (t a) (g c) (c g)))))
+
+(defun complement-strand (strand)
+  (let ((complement nil))
+    (dolist (base strand (reverse complement))
+      (push (complement-base base) complement))))
+
+(defun make-double (strand)
+  (let ((double nil))
+    (dolist (base strand double)
+      (push (list base (complement-base base)) double))))
+
+(defun count-bases (double)
+  (let ((a-count 0) (t-count 0) (c-count 0) (g-count 0))
+    (labels ((count-base (base)
+               (cond ((equal 'a base) (incf a-count))
+                     ((equal 't base) (incf t-count))
+                     ((equal 'c base) (incf c-count))
+                     ((equal 'g base) (incf g-count)))))
+      (dolist (x double)
+        (cond ((atom x) (count-base x))
+              (t (count-base (first x))
+                 (count-base (second x)))))
+    (list (list 'a a-count)
+          (list 't t-count)
+          (list 'c c-count)
+          (list 'g g-count)))))
+
+
+(count-bases (make-double *strand*))
+
+(defun prefixp (strand1 strand2)
+  (do ((base1 strand1 (rest base1))
+       (base2 strand2 (rest base2)))
+      ((null base1) t)
+    (when (not (equal (first base1) (first base2)))
+      (return nil))))
+
+
+(defparameter *gtc* '(g t c))
+(defparameter *gtcat* '(g t c a t))
+
+(prefixp *gtc* *gtcat*)
+
+(defparameter *catgtcag* '(c a t g t c a g))
+
+(defun appearsp (strand1 strand2)
+  (do ((substrand strand2 (member (first strand1) (rest substrand))))
+      ((null substrand) nil)
+    (when (prefixp strand1 substrand)
+      (return t))))
+
+(defun coverp (strand1 strand2)
+  (do ((substrand strand2 (nthcdr (length strand1) substrand)))
+      ((null substrand) t)
+    (unless (prefixp strand1 substrand)
+      (return nil))))
+
+(coverp '(c a t) '(c a t c a t c a t))
+(coverp '(c a t) '(c a t g a t c a t))
+
+(defun prefix (len strand)
+  (let ((pre nil))
+    (dotimes (i len (reverse pre))
+      (push (first strand) pre)
+      (pop strand))))
+
+(prefix 4 *catgtcag*)
+
+(defun kernel (strand)
+  (let ((substrand nil))
+    (dolist (base strand substrand)
+      (push base substrand)
+      (when (coverp (reverse substrand) strand)
+        (return (reverse substrand))))))
+
+(kernel '(c a t c a t c a t))
+(kernel '(a a a a a))
+#+end_src
+
+#+RESULTS:
+: NIL
+
+*** NOTES
+*** ANALYSIS
+If you are already familiar with iteration in other languages, you might think you know basically how to do it in Lisp.
+
+You are mistaken.
+
+The iteration operators can seem tantilizingly familiar at first, but they have their own Lispy flavor that requires real attention to detail that you might not have with other languages like Python.
+
+The DO operator is especially tricky.
+
+I found myself often wishing to reach for recursion or functional programming operators instead, but forced myself to use the iteration constructs.
+** Structures and The Type System
+*** FUNCTIONS COVERED
+TYPEP TYPE-OF
+DEFSTRUCT <struct>-p make-<struct>
+:print-function EQUALP
+*** EXERCISES
+**** KEYBOARD EXERCISE
+:LOGBOOK:
+CLOCK: [2024-07-27 Sat 15:16]--[2024-07-27 Sat 15:18] =>  0:02
+:END:
+
+***** DONE PROCESS-NODE
+:LOGBOOK:
+CLOCK: [2024-07-27 Sat 15:48]--[2024-07-27 Sat 16:02] =>  0:14
+:END:
+***** DONE RUN
+:LOGBOOK:
+CLOCK: [2024-07-27 Sat 16:03]--[2024-07-27 Sat 16:38] =>  0:35
+:END:
+
+***** DONE ADD-NODES
+:LOGBOOK:
+CLOCK: [2024-07-27 Sat 16:42]--[2024-07-27 Sat 16:55] =>  0:13
+:END:
+
+***** DONE ADD SOME NODES
+:LOGBOOK:
+CLOCK: [2024-07-27 Sat 16:56]--[2024-07-27 Sat 17:01] =>  0:05
+:END:
+***** CODE
+#+begin_src lisp
+(defstruct node
+  (name nil)
+  (question nil)
+  (yes-case nil)
+  (no-case nil))
+
+(defparameter *node-list* nil)
+
+(defun init ()
+  (setf *node-list* nil))
+
+(defun add-node (name question yes-case no-case)
+  (push (list name (make-node :name name :question question :yes-case yes-case :no-case no-case)) *node-list*)
+  name)
+
+(defun add-nodes ()
+  (let ((name nil)
+        (question nil)
+        (yes-case nil)
+        (no-case nil))
+    (format t "~&Name of Node: ")
+    (setf name (read))
+    (format t "~&Question: ")
+    (setf question (read))
+    (format t "~&If yes: ")
+    (setf yes-case (read))
+    (format t "~&If no: ")
+    (setf no-case (read))
+    (list name question yes-case no-case)
+    (add-node name question yes-case no-case)))
+
+
+(add-node 'start
+          "Does the engine turn over?"
+          'engine-turns-over
+          'engine-wont-run)
+
+(add-node 'engine-turns-over
+          "Will the engine run for any period of time?"
+          'engine-will-run-briefly
+          'engine-wont-run)
+
+(add-node 'engine-wont-run
+          "Is there gas in the tank?"
+          'gas-in-tank
+          "Fill the tank and try starting the engine again.")
+
+(add-node 'engine-wont-turn-over
+          "Do you hear any sound when you turn the key?"
+          'sound-when-turn-key
+          'no-sound-when-turn-key)
+
+(add-node 'no-sound-when-turn-key
+          "Is the battery voltage low?"
+          "Replace the battery."
+          'battery-voltage-ok)
+
+(add-node 'battery-voltage-ok
+          "Are the battery cables dirty or loose?"
+          "Clean the cables and tighten the connections."
+          'battery-cables-good)
+
+(defun find-node (name)
+  (second (assoc name *node-list*)))
+
+(defun get-next-node (node)
+  (let ((answer (yes-or-no-p (format t "~&~A" (node-question node)))))
+    (if (null answer)
+        (node-no-case node)
+        (node-yes-case node))))
+
+(defun process-node (x)
+  (let* ((node (find-node x)))
+    (cond ((null node) (format t "Node not found.") nil)
+          (t (get-next-node node)))))
+
+(process-node 'start)
+
+
+(defun run ()
+  (let ((current-node 'start))
+    (do ((node current-node))
+        ((null node) nil)
+      (if (stringp node)
+          (return (format t "~&~a" node))
+          (setf node (process-node node))))))
+#+end_src
+*** NOTES
+This is a short chapter that mostly only teaches DEFSTRUCT.
+
+DEFSTRUCT to define a struct, MAKE-<STRUCT-DEFINITION-NAME> to make a struct. <STRUCT>-p to test if a struct is a kind of the given struct.
+
+<STRUCT>-<FIELD> to access a field. Ex: for struct named SHIP that has a field NAME, access that field with SHIP-NAME.
+
+Make a :print-function to suppress details of structures when structures are printed.
+
+EQUAL doesn't work on structures, even if all fields are the same. EQUALP will work, though.
+*** ANALYSIS
+Simple chapter. The exercises didn't do as much guidance. Through exercises I realized that structures need to be used in the context of list processing functions. Structures seem simple to use, similar to classes (since they can inherit from other structures). One thing I wish the author taught is the advantages and disadvantages of structures over plain lists.
+** Arrays, Hash Tables, and Property Lists
+*** FUNCTIONS COVERED
+MAKE-ARRAY :INITIAL-ELEMENT :INITIAL-CONTENTS AREF MAKE-HASH-TABLE GETHASH DESCRIBE INSPECT
+GET SYMBOL-PLIST SIBLINGS REMPROP PUSHNEW ADDPROP
+COERCE
+*** EXERCISES
+**** ARRAY KEYBOARD EXERCISE
+***** new-histogram
+***** record-value
+***** print-hist-line
+***** print-histogram
+*****
+#+begin_src lisp
+(defun new-histogram (num)
+  (defparameter *hist-array* (make-array num))
+  (defparameter *total-points* 0))
+
+(defun record-value (num)
+  (cond ((<= 0 num 10)
+         (setf (aref *hist-array* num) (incf (aref *hist-array* num)))
+         (setf *total-points* (incf *total-points*)))
+        (t (format t "That number is not between 0 and 10."))))
+
+(defun print-hist-line (num)
+  (let ((count (aref *hist-array* num)))
+    (format t "~&~2s (~3s) " num count)
+    (dotimes (n count)
+      (print "*"))))
+
+(defun print-histogram ()
+  (map 'string #'(lambda (hist) (print-hist-line hist)) *hist-array*))
+#+end_src
+**** HASH TABLE KEYBOARD EXERCISE
+***** 13.9
+****** [X] a.
+****** [X] b.
+****** [X] c.
+****** [X] d.
+****** [X] e.
+****** [X] f.
+****** [X] g.
+****** [X] h.
+****** [X] i.
+****** [X] j.
+****** [X] k.
+****** [X] l.
+****** [ ] m.
+***** CODE
+#+begin_src lisp
+(defparameter *crypto-text* '("zj ze kljjls jf slapzi ezvlij pib kl jufwxuj p hffv jupi jf"
+                              "enlpo pib slafml pvv bfwkj"))
+
+(defparameter *encipher-table* (make-hash-table))
+(defparameter *decipher-table* (make-hash-table))
+
+(defun make-substitution (character substitute)
+  (setf (gethash character *decipher-table*) substitute)
+  (setf (gethash substitute *encipher-table*) character))
+
+(defun undo-substitution (character)
+  (setf (gethash character *decipher-table*) nil)
+  (setf (gethash (gethash character *decipher-table*) *encipher-table*) nil))
+
+(defun clear ()
+  (clrhash *decipher-table*)
+  (clrhash *encipher-table*))
+
+(defun decipher-character (char)
+  (let ((char-as-str (gethash char *decipher-table*)))
+    (when char-as-str
+      (coerce char-as-str 'character))))
+
+(defun decipher-string (crypto-text)
+  (let* ((len (length crypto-text))
+         (deciphered-text (make-string len :initial-element #\Space)))
+    (dotimes (pos len)
+      (if (not (null (decipher-character (aref crypto-text pos))))
+          (setf (aref deciphered-text pos) (decipher-character (aref crypto-text pos)))
+          (setf (aref deciphered-text pos) (aref crypto-text pos))))
+    deciphered-text))
+(decipher-character (aref (first *crypto-text*) 0))
+
+(defun decipher-all-strings (crypto-text)
+  (mapcar #'(lambda (line) (decipher-string line)) crypto-text))
+
+(defun show-line (crypto-text)
+  (format t "~&Cipher: ~a" crypto-text)
+  (format t "~&Decipher: ~a" (decipher-string crypto-text)))
+
+(defun show-text (crypto-lines)
+  (dolist (line crypto-lines)
+    (show-line line)))
+
+(defun get-first-char (x)
+  (char-downcase
+   (char (format nil "~A" x) 0)))
+
+
+(defun read-letter ()
+  (let ((input (read-line)))
+    (cond ((equal "end" input) 'end)
+          ((equal "undo" input) 'undo)
+          (t (get-first-char input)))))
+
+(defun sub-letter (char)
+  (let ((substitute nil))
+    (cond ((decipher-character char) (format t "That character's substitute already exists.~&"))
+          (t
+           (format t "What does ~a decipher to?~&" char)
+           (setf substitute (read-line))
+           (if (not (gethash substitute *encipher-table*))
+               (make-substitution char substitute)
+               (format t "That substitute already exists for another character.~&"))))))
+
+(defun undo-letter ()
+  (let ((letter-to-undo nil))
+    (format t "~&What substitution do you want to take back?~&")
+    (setf letter-to-undo (read-line))
+    (if (gethash letter-to-undo *decipher-table*)
+        (undo-substitution letter-to-undo)
+        (format t "~&That letter hasn't been deciphered yet."))))
+
+(defun solve (crypto-text)
+  (show-text crypto-text)
+  (format t "~&Enter a command or lowercase letter.~&")
+  (let ((letter-to-decipher (read-letter)))
+    (cond ((characterp letter-to-decipher) (and (sub-letter letter-to-decipher)
+                                                (solve (decipher-all-strings crypto-text))))
+          ((equal 'undo letter-to-decipher) (and (undo-letter)
+                                                 (solve (decipher-all-strings crypto-text))))
+          ((equal 'end letter-to-decipher) t)
+          (t (format t "Your response must be either a lowercase letter, or one of the following commands: `undo` or `end`.")))))
+(clear)
+(solve *crypto-text*)
+#+end_src
+*** NOTES
+**** 13.1 INTRODUCTION
+**** 13.2 CREATING AN ARRAY
+Arrays are faster and consume less memory. Lists of arbitrary length are easier to make using recursion and so on. Growing arrays one element at a time is more difficult. It's possible to use fill pointers or adjustable arrays, but repeat calls to ADJUST-ARRAY are expensive. Lists can also share structure, something arrays can't do.
+**** 13.3 PRINTING ARRAYS
+**** 13.4 ACCESSING AND MODIFIYING ARRAY ELEMENTS
+AREF is a place that can be set using SETF.
+
+All Sequence functions are valid for arrays and lists alike, but CAR/CDR etc. can't be used on arrays.
+
+**** 13.5 CREATING ARRAYS WITH MAKE-ARRAY
+**** 13.6 STRINGS AS VECTORS
+Strings can be modified using AREF + SETF, but only with character objects
+
+**** 13.7 HASH TABLES
+Hash tables offer the same functionality as associated lists. Hash tables are faster, a-lists are easier to create and manipulate.
+
+Access a hash table value with GETHASH and the key to search for (like ASSOC). GETHASH returns two values: the value associated with the key (or NIL if it wasn't found), and a T or NIL depending on whether such a key exists in the hash table.
+
+Set values with SETF.
+
+DESCRIBE to learn about hash tables. INSPECT to look at entries in hash tables.
+
+**** 13.8 PROPERTY LISTS
+p-lists are old and most people use a-lists or hash-tables instead when writing modern CL code.
+
+**** 13.9 PROGRAMMING WITH PROPERTY LISTS
+**** ANALYSIS
+The exercises, while fairly simple, were good for demonstrating the kinds of challenges you face when you use non-list data structures. You can use AREF to access positions in an array (like a string), but you need to use GETHASH to access values in a hash table, for example. You also have fewer native functions for modifying arrays or hash tables compared to lists (understandably).
+*** ADVANCED
+**** 13.10 PROPERTY LIST CELLS
+**** 13.11 MORE ON SEQUENCES
+** Macros and Compliation
+*** FUNCTIONS COVERED
+DEFMACRO, COMPILE, COMPLILE-FILE
+&BODY DEFVAR DEFPARAMETER DEVCONSTANT
+*** NOTES
+**** 14.1 INTRODUCTION
+**** 14.2 MACROS AS SHORTHAND
+**** 14.3 MACRO EXPANSION
+**** 14.4 DEFINING A MACRO
+#+begin_src lisp
+(defmacro simple-incf (var)
+  (list 'setq var (list '+ var 1)))
+(setf a 4)
+(simple-incf a)
+#+end_src
+**** 14.5 MACROS AS SYNTACTIC EXTENSIONS
+**** 14.6 THE BACKQUOTE CHARACTER
+#+begin_src lisp
+(defmacro simple-incf (var &optional (amount 1))
+  `(setf ,var (+ ,var ,amount)))
+
+(setf a 5)
+(simple-incf a)
+#+end_src
+**** 14.7 SPLICING WITH BACKQUOTE
+**** 14.8 THE COMPILER
+**** 14.9 COMPILATION AND MACRO EXPANSION
+**** 14.10 COMPILING ENTIRE PROGRAMS
+**** 14.11 CASE STUDY: FINITE STATE MACHINES
+
+*** EXERCISES
+**** 14.1
+**** 14.2
+**** 14.3
+#+begin_src lisp
+(defmacro set-nil (var)
+  (list 'setf var 'nil))
+(setf a 5)
+(set-nil a)
+#+end_src
+**** 14.4
+#+begin_src lisp
+(defmacro simple-rotatef (var1 var2)
+  `(let ((old-var1 ,var1)
+         (old-var2 ,var2))
+     (setf ,var1 old-var2)
+     (setf ,var2 old-var1)))
+
+(setf a 1)
+(setf b 10)
+(simple-rotatef a b)
+#+end_src
+**** 14.5
+#+begin_src lisp
+(defmacro set-mutual (var1 var2)
+  `(progn (setf ,var1 ',var2)
+          (setf ,var2 ',var1)))
+(setf c nil)
+(setf d nil)
+(set-mutual z x)
+#+end_src
+**** 14.6
+#+begin_src lisp
+(defmacro variable-chain (&rest variables)
+  `(progn ,@(do ((v variables (rest v))
+                 (res nil))
+                ((null v) (reverse res))
+              (push `(setf ,(first v)
+                           ',(second v))
+                    res))))
+#+end_src
+**** KEYBOARD EXERCISE
+***** [X] 14.11
+****** [X] a.
+****** [X] b.
+****** [X] c.
+****** [X] d.
+***** CODE
+#+begin_src lisp
+(defstruct (node (:print-function print-node))
+  (name nil)
+  (inputs nil)
+  (outputs nil))
+
+(defun print-node (node stream depth)
+  (format stream "#<Node ~a>"
+          (node-name node)))
+
+(defstruct (arc (:print-function print-arc))
+  (from nil)
+  (to nil)
+  (label nil)
+  (action nil))
+
+(defun print-arc (arc stream depth)
+  (format stream "#<ARC ~a / ~a / ~a>"
+          (node-name (arc-from arc))
+          (arc-label arc)
+          (node-name (arc-to arc))))
+
+(defvar *nodes*)
+(defvar *arcs*)
+(defvar *current-node*)
+
+
+(defun initialize ()
+  (setf *nodes* nil)
+  (setf *arcs* nil)
+  (setf *current-node* nil))
+
+(initialize)
+(defmacro defnode (name)
+  `(add-node ',name))
+
+(defun add-node (name)
+  (let ((new-node (make-node :name name)))
+    (setf *nodes* (nconc *nodes* (list new-node)))
+    new-node))
+
+(defun find-node (name)
+  (or (find name *nodes* :key #'node-name)
+      (error "No node named ~a exists." name)))
+
+(defmacro defarc (from label to &optional action)
+  `(add-arc ',from ',label ',to ',action))
+
+(defun add-arc (from-name label to-name action)
+  (let* ((from (find-node from-name))
+         (to (find-node to-name))
+         (new-arc (make-arc :from from
+                            :label label
+                            :to to
+                            :action action)))
+    (setf *arcs* (nconc *arcs* (list new-arc)))
+    (setf (node-outputs from)
+          (nconc (node-outputs from)
+                 (list new-arc)))
+    (setf (node-inputs to)
+          (nconc (node-inputs to)
+                 (list new-arc)))
+    new-arc))
+
+(defun fsm (&optional (starting-point 'start))
+  (setf *current-node* (find-node starting-point))
+  (do ()
+      ((null (node-outputs *current-node*)))
+    (one-transition)))
+
+(defun one-transition ()
+  (format t "~&State ~a. Input: "
+          (node-name *current-node*))
+  (let* ((ans (read))
+         (arc (find ans
+                    (node-outputs *current-node*)
+                    :key #'arc-label)))
+    (unless arc
+      (format t "~&No arc from ~a has label ~a.~%"
+              (node-name *current-node*) ans)
+      (return-from one-transition nil))
+    (let ((new (arc-to arc)))
+      (format t "~&~a" (arc-action arc))
+      (setf *current-node* new))))
+
+;; Set up the nodes and arcs
+(defnode start)
+(defnode have-5)
+(defnode have-10)
+(defnode have-15)
+(defnode have-20)
+(defnode end)
+
+(defarc start nickel have-5 "Clunk!")
+(defarc start dime have-10 "Clink!")
+(defarc start coin-return start "Nothing to return.")
+(defarc have-5 nickel have-10 "Clunk!")
+(defarc have-5 dime have-15 "Clink!")
+(defarc have-5 coin-return start "Returned five cents.")
+(defarc have-10 nickle have-15 "Clunk~!")
+(defarc have-10 dime have-20 "Clink!")
+(defarc have-10 coin-return start "Returned ten cents.")
+(defarc have-15 nickel have-20 "Clunk!")
+(defarc have-15 dime have-20 "Nickel change.")
+(defarc have-15 gum-button end "Deliver gum.")
+(defarc have-15 coin-return start "Returned 15.cents")
+(defarc have-20 nickel have-20 "Nickel returned.")
+(defarc have-20 dime have-20 "Dime returned")
+(defarc have-20 gum-button end "Deliver gum, nickel change.")
+(defarc have-20 mint-button end "Deliver mitn")
+(defarc have-20 coin-return start "Returned twenty cents.")
+
+;; BEGIN KEYBOARD EXERCISE
+;;; This is an example of a specialized function for the start state.
+(defun start (input-syms &aux (this-input (first input-syms)))
+  (cond ((null input-syms) 'start)
+        ((equal this-input 'nickel)
+         (format t "~&~a" "Clunk!")
+         (have-5 (rest input-syms)))
+        ((equal this-input 'dime)
+         (format t "~&~a" "Clink!")
+         (have-10 (rest input-syms)))
+        ((equal this-input 'coin-return)
+         (format t "~&~a" "Nothing to return.")
+         (start (rest input-syms)))
+        (t (error "No arc from ~a with label ~a." 'start this-input))))
+
+(defun compile-arc (arc)
+  (unless (null (arc-from arc))
+    `((equal this-input ',(arc-label arc))
+      (format t "~&~a" ,(arc-action arc))
+      (,(node-name (arc-to arc)) (rest input-syms)))))
+
+(compile-arc *arcs*)
+
+(defun compile-node (node)
+  (let ((name (node-name node))
+        (arc-clauses (mapcar #'compile-arc (node-outputs node))))
+    `(defun ,name (input-syms &aux (this-input (first input-syms)))
+       (cond ((null input-syms) 'name)
+         ,@arc-clauses
+         (t (error "No arc from ~a with label ~a." ',(node-name node) this-input))))))
+
+
+(defmacro compile-machine ()
+  `(progn ,@(mapcar #'compile-node *nodes*)))
+
+(macroexpand (compile-machine))
+(start '(dime dime dime gum-button))
+#+end_src
+*** ADVANCED
+**** 14.12 THE &BODY LAMBDA-LIST KEYWORD
+**** 14.13 DESTRUCTURING LAMBDA LISTS
+**** 14.14 MACROS AND LEXICAL SCOPING
+**** 14.15 HISTORICAL SIGNIFICANCE OF MACROS=
+**** 14.16 DYNAMIC SCOPING
+**** 14.17 DEFVAR, DEFPARAMETER, DEFCONSTANT
+**** 14.18 REBINDING SPECIAL VARIABLES
+
+*** ANALYSIS
+A good end to the book. I needed to refresh my memory on structures.
+
+The keyboard exercise required considerable setup, but it actually was fairly easy to complete the exercise. It also demonstrates the power of macros without being too complicated nor too simple.
+* Appendix A: The SDRAW Tool
+A tool made for helping students understand cons cells.
+* Appendix B: The DTRACE Tool
+"DTRACE provides a more detailed trace display than most manufacturer-supplied implementations of TRACE."
+
+Useful for debugging recursive functions?
+
+Still relevant? Have CL implementations improved tracing since publishing of this book?
+* Appendix C: Answers to Exercises
+* REVIEW
+
+[[https://x.com/killian_arts/status/1825430857433456933][X.com page]]
+
+Common Lisp: A Gentle Introduction to Symbolic Computation is an introductory text on Common Lisp. It is designed for use as an introduction to programming in general, slowly easing readers into different concepts like functions and variables. It includes small exercises throughout each chapter, and beginning in chapter 3, it includes one final larger exercise at the end of each chapter that allows readers to apply all the concepts learned in one larger project.
+
+It begins very slowly, with the first two chapters explaining the fundamentals of programming with Lisp without any code or coding assignments.
+
+It doesn't provide any information on programming environments or text editors, relying on instructors in classes to provide students with the necessary resources. Due to the lack of code and information on coding environment instruction, it feels very slow to start and incomplete for use as a book for self-learners. If you want to use it as an introduction to Common Lisp, I recommend first learning Emacs. Given the lack of exercises or code examples, I recommend moving swiftly through the first 76 pages of the book and backtracking if you feel lost later.
+
+The question is: Given the apparent weaknesss above, should you even bother reading Touretzky's book?
+
+If you're learning programming on your own and new to Emacs, I'd say no. Learning Emacs is a rather large hurdle to overcome at the beginning of your journey. Even if the knowledge you gain in this book is good, the difficulty starting out will probably discourage you from continuing anyway. If you're determined, then I must emphasize that learning Emacs will be critical to learning Common Lisp. Start with downloading an Emacs distro like Doom or Spacemacs, watch some instructional videos on its features and how to use it, and then once you're comfortable using Emacs, continue learning Common Lisp.
+
+If you know Emacs, should you study with this book?
+
+The answer is: Yes! As a full-stack web developer, I'm familiar with both JavaScript and Python. While I like web development, I have worried about specializing too much as a frameworker or a UI builder, missing out on more fundamental knowledge of computers and programming. I enjoy programming and want to master it, not just get paid.
+
+In an effort to expand my fundamental knowledge, I decided to learn Common Lisp, believing that it was a functional programming language ala Haskell or Ocaml. As I learned more about Lisp before getting too far in the book, I realized that Common Lisp really is paradigm agnostic, leaving developers to choose their preferred mode of programming. I was worried that I might not be exposed to enough new concepts while learning Common Lisp to make the exercise worth-while, but I was pleasantly surprised to find that wasn't the case.
+
+So as a web developer, what did I learn?
+
+** Breaking out of for loops
+One goal of mine was to learn "functional" programming techniques like mapping, filtering, and recursion. Recursion isn't exclusively a functional programming technique, but my impression is that recursion is used more in functional programming languages compared to languages like JS or Python. While mapping and filtering is possible in both JS and Python, especially in Python such techniques are considered "non-Pythonic" and generally discouraged. And since JS really designed more for imperative programming, I figured learning Common Lisp would expose me to more "correct" ways of using mapping and filtering.
+
+Touretzky did not disappoint. Iteration operators like DO, DOLIST, and DOTIMES aren't introduced until chapter 10. Instead, the first tools Touretzky teaches for working on sets of data are "applicative programming" tools, i.e. mapping and filtering. Perfect. In that chapter, the final exercise involves learning how to make what I would describe as a primitive querying API for querying a simple, list-based database.
+
+In the next chapter, Touretzky teaches recursion. I have previously tried learning recursion via the venerable Structures and Interpretations of Computer Programs by Sussman and Abelson, and every time I felt overwhelmed by the explanations and exercises that require a bit more mathematical skill than I can muster. As a result, recursion has had a bit of a mysterious aura to me.
+
+Fortunately, Touretzky slowly and gently teaches both how to use, and when to use recursion. Although I can't say that I am now an expert on recursion, I feel much more confident than I was prior to completing the chapter.
+
+Overall, I was more than satisfied with Touretzky's greater emphasis on functional programming and recursion.
+
+** Data-Oriented Programming vs. Abstractions
+Over the last year or so, I've been exposed to the "Data-Oriented Programming" paradigm championed by Jonathan Blow, Casey Muratori, and Mike Acton. Simply put, those three horsemen of good data structures believe that object oriented programming techniques that rely on heavy abstractions are bad for building good software. The main reason is because the abstractions rely on modeling data in ways that lead to poor speed and reliability in software. Additionally, the heavy layering of abstractions makes the resulting code much more difficult to understand.
+
+Lisp is notable for being a language that provides a lot of flexibility for making abstractions. While the linked-lists that provide the foundational data structure for Lisp are inefficient compared to other data types (a topic also covered in the book), they are excellent for prototyping. When beginning a project, it's recommended to use lists first and then "optimize" with other data structures when necessary.
+
+But just because you *can* make clever abstractions, that doesn't mean you always should. Rather than relying on "clever" abstractions, is it possible to take a more "Data-Oriented" approach to programming in Lisp, while also using the flexibilty it provides for creating abstractions when that's necessary?
+
+After reading this Gentle Introduction, my preliminary judgement is: Yes.
+
+Tic-Tac-Toe is a classic toy project for learning Common Lisp. I actually watched some Youtube videos teaching how to do tic-tac-toe in Common Lisp. I found them rather difficult treatments of the problem, but I wasn't sure why.
+
+The final project for the Assignment chapter happens to be tic-tac-toe. After learning Touretzky's method of making a tic-tac-toe game--complete with an AI computer player!--I am more convinced than ever that an emphasis on good, simple data structures can vastly improve the quality of code, and make solving certain problems far simpler than using more "obvious" but also more complicated data structures.
+
+The more complicated method of making a tic-tac-toe game models the game board as a 2D array, with player icons modeled as string Xs and Os and empty spaces modeled as underscores. This is a more obvious and direct modeling of the game.
+
+The Touretzky method models the game board as a simple flat list, player icons as ones and tens, and empty spaces as zeros. This model of the game is non-obvious and doesn't reflect what the game looks like in real life.
+
+That one difference--the choice of how to model the data--has a profound impact on the rest of the code. Lists are simpler to use and manipulate than arrays, and flat list are especially easier than 2D arrays. Strings require extra manual work to model win-conditions, whereas simple math is all that is necessary to model win-conditions with the Touretzky method. The choice of flat lists of numbers, rather than 2D arrays of strings, completely changes the level of complexity of the rest of the code.
+
+While the tic-tac-toe exercise was the most instructional one for demonstrating the importance of choosing good data structures and modeling, several other exercises also demonstrate the power of simple data structures.
+
+Overall, Touretzky's treatment of data structures throughout the book was profoundly instructional and inspirational. It leaves me hope that there is a way to thread the needle between Sussman and Muratori using good, simple sets of abstractions to work on simple data structures.
+
+** Other stuff
+Touretzky teaches all the other basics, like all of the important list processing operators, how to take user input, how to print data, how to use structures/arrays/hash tables, and the final chapter also teaches the basics of using macros.
+
+The most conspicuously missing language construct missing from the book is the the Common Lisp Object system--CL's object oriented programming construct. Since my intention was to learn functional programming operations and recursion, I wasn't bothered at all by the lack of DEFCLASS or DEFMETHOD in the book.
+** Final Judgement
+Overall, Common Lisp: A Gentle Introduction to Symbolic Computation is an excellent introduction to Common Lisp. While it starts slow, and in a modern context a working knowledge of Emacs is a prerequisite for learning Common Lisp and beginning the book, it has provided me both an excellent foundation for programming in Common Lisp and a greater understanding of programming methods and concepts that I can apply in any language I use in the future.
+
+If you're interested in learning Common Lisp and wonder if you will get any value out of Touretzky's book, wonder no more.
+
+Final Judgement: 10/10
+
+While you can (and I did) purchase a new copy of the book, a PDF of the book is also available for free.

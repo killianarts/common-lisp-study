@@ -1,0 +1,567 @@
+#+title: STRUCTURES AND INTERPRETATIONS OF COMPUTER PROGRAMS NOTES
+
+* 1 Building Abstractions with Procedures
+What is the *model* for statement evaluation in Lisp?
+- Evaluate subexpressions
+- Apply the procedure that is the value of the leftmost subexpression (the operator) to the arguments that are the values of the other subexpressions (the operands).
+This *substitution model* uses *applicative-order evaluation*. The rule is recursive.
+
+#+begin_src lisp
+(defun f (x)
+  (sum-of-squares (+ x 1)(* x 2)))
+
+(defun sum-of-squares (x y)
+  (+ (square x)(square y)))
+
+(defun square (x)
+  (* x x))
+
+;; The evaluation in this model goes like this:
+(f 5)
+(sum-of-squares (+ 5 1)(* 5 2))
+(sum-of-squares 6 10)
+(+ (square 6) (square 10))
+(+ 36 100)
+136
+#+end_src
+
+An alternative model of evaluation:
+- Expand all expressions until only primitive expressions are left.
+- Evaluate subexpressions.
+- Apply procedures to the results of those evaluated subexpressions.
+
+#+begin_src lisp
+(f 5)
+(sum-of-squares (+ 5 1) (* 5 2))
+(+ (square (+ 5 1) (square (* 5 2))))
+(+ (* (+ 5 1) (+ 5 1)) (* (* 5 2) (* 5 2)))
+(+ (* 6 6) (* 10 10))
+(+ 36 100)
+136
+#+end_src
+
+This evaluation model is the *fully expand and then reduce* model, or the *normal-order evaluation* model.
+
+Lisp uses the *applicative-order evaluation* model.
+
+** Factorial
+#+begin_src lisp
+(defun factorial (n)
+  "Compute factorial using linear recursion."
+  (if (= n 1)
+      1
+      (* n (factorial (- n 1)))))
+(factorial 531)
+
+(defun neo-factorial (n)
+  "Compute factorial using a linear iterative process that includes a counter."
+  (factorial-iter 1 1 n))
+(defun factorial-iter (product counter max-count)
+  (if (> counter max-count)
+      product
+      (factorial-iter (* product counter)
+                      (+ counter 1)
+                      max-count)))
+(neo-factorial 1590)
+#+end_src
+
+The above *procedures* demonstrate two different _processes_ for producing a factorial. Both procedures are recursive, but factorial uses a recursive process while neo-factorial uses an iterative process to build up the result.
+
+One important difference is that the lisp interpreter needs to maintain special information about "where" factorial is in its process (in the call stack), whereas if you stopped neo-factorial in the middle of its process, all you need is to reinput the value of the product/counter/max-count parameters to the values they had when the process was stopped in order to restart the process.
+
+Another important difference is the "shape" of the process. 531 is the largest number (factorial) can compute factorials for, but because of the iterative process in (neo-factorial), it can calculate factorials for larger numbers.
+
+** Tree recursion vs. iterative recursion
+#+begin_src lisp
+(defun tree-fib (n)
+  (cond ((= n 0) 0)
+        ((= n 1) 1)
+        (t (+ (tree-fib (- n 1))
+              (tree-fib (- n 2))))))
+
+(defun fib (n)
+  (fib-iter 1 0 n))
+
+(defun fib-iter (a b count)
+  (if (= count 0)
+      b
+      (fib-iter (+ a b) a (- count 1))))
+(tree-fib 35)
+(fib 795)
+
+(defun count-change (amount)
+  (cc amount 4))
+
+(defun cc (amount kinds-of-coins)
+  (cond ((= amount 0) 1)
+        ((or (< amount 0) (= kinds-of-coins 0) 0))
+        (t (+ (cc amount (- kinds-of-coins 1))
+              (cc (- amount (first-denomination kinds-of-coins))
+                  kinds-of-coins)))))
+(defun first-denomination (kinds-of-coins)
+  (cond ((= kinds-of-coins 1) 1)
+        ((= kinds-of-coins 2) 5)
+        ((= kinds-of-coins 3) 10)
+        ((= kinds-of-coins 4) 25)))
+
+(count-change 200) ; Doesn't work, not sure why, don't care.
+#+end_src
+
+** Higher Order Functions
+#+begin_src lisp
+(defun cube (n)
+  (* n n n))
+(defun sum-integers (n1 n2)
+  (if (> n1 n2)
+      0
+      (+ n1 (sum-integers (1+ n1) n2))))
+(defun sum-cubes (n1 n2)
+  (if (> n1 n2)
+      0
+      (+ (cube n1) (sum-cubes (1+ n1) n2))))
+(defun pi-sum (n1 n2)
+  (if (> n1 n2)
+      0
+      (+ (/ 1.0 (* n1 (+ n1 2))) (pi-sum (+ n1 4) n2))))
+
+(defun sum (term n1 next n2)
+  (if (> n1 n2)
+      0
+      (+ (funcall term n1)
+         (sum term (funcall next n1) next n2))))
+
+(defun increment (n)
+  (+ n 1))
+
+(defun higher-sum-cubes (n1 n2)
+  (sum #'cube n1 #'increment n2))
+
+(defun ident (x) x)
+(defun higher-sum-integers (n1 n2)
+  (sum #'ident n1 #'increment n2))
+
+(defun higher-pi-sum (n1 n2)
+  (flet ((pi-term (n)
+           (/ 1.0 (* n (+ n 2))))
+         (pi-next (n)
+           (+ n 4)))
+    (sum #'pi-term n1 #'pi-next n2)))
+
+(* 8 (higher-pi-sum 1 10000))
+
+(defun integral (f a b dx)
+  (flet ((add-dx (x) (+ x dx)))
+    (* (sum f (+ a (/ dx 2.0)) #'add-dx b)
+       dx)))
+
+(integral #'cube 0 1 0.001)
+#+end_src
+
+#+RESULTS:
+: 0.24999388
+
+#+begin_src lisp
+(defun cube (n) (* n n n))
+(defun increment (n) (1+ n))
+(defun sum (term n1 next n2)
+  (labels ((_sum (n1 result)
+             (if (> n1 n2)
+                 result
+                 (_sum (funcall next n1) (+ (funcall term n1) result)))))
+    (_sum n1 0)))
+(defun higher-sum-cubes-iter (n1 n2)
+  (sum #'cube n1 #'increment n2))
+(higher-sum-cubes-iter 1 10)
+#+end_src
+
+#+RESULTS:
+: 3025
+
+#+begin_src lisp
+(defun ident (x) x)
+(defun increment (x) (1+ x))
+(defun higher-factorial (n)
+  (product #'ident 1 #'increment n))
+
+(defun accumulate (combiner null-value term n1 next n2)
+  (labels ((_accumulate (n1 result)
+             (if (> n1 n2)
+                 result
+                 (_accumulate (funcall next n1)
+                              (funcall combiner (funcall term n1) result)))))
+    (_accumulate n1 null-value)))
+
+(defun filtered-accumulate (combiner null-value term n1 next n2 filter)
+  (labels ((_accumulate (n1 result)
+             (if (> n1 n2)
+                 (remove-if-not filter result)
+                 (_accumulate (funcall next n1)
+                              (funcall combiner (funcall term n1) result)))))
+    (_accumulate n1 null-value)))
+
+;; TODO recursive version of accumulate
+
+(defun sky-high-sum (term n1 next n2)
+  (accumulate #'+ 0 term n1 next n2))
+
+(sky-high-sum #'ident 1 #'increment 10)
+
+(defun close-enough-p (x y)
+  (< (abs (- x y)) 0.001))
+
+(defun positive-p (n)
+  (> n 0))
+(defun negative-p (n)
+  (< n 0))
+(defun average (n1 n2) (/ (+ n1 n2) 2))
+(defun cube (n) (* n n n))
+
+(defun fixed-point-search (fun neg-point pos-point)
+  (let ((mid-point (average neg-point pos-point)))
+    (if (close-enough-p neg-point pos-point)
+        mid-point
+        (let ((test-value (funcall fun mid-point)))
+          (cond
+            ((positive-p test-value)
+             (fixed-point-search fun neg-point mid-point))
+            ((negative-p test-value)
+             (fixed-point-search fun mid-point pos-point))
+            (t mid-point))))))
+
+(defun half-interval-method (fun n1 n2)
+  (let ((n1-value (funcall fun n1))
+        (n2-value (funcall fun n2)))
+    (cond ((and (negative-p n1-value)
+                (positive-p n2-value))
+           (fixed-point-search fun n1 n2))
+          ((and (negative-p n2-value)
+                (positive-p n1-value))
+           (fixed-point-search fun n2 n1))
+          (t (error "Values ~a and ~a are not of opposite signs." n1 n2)))))
+
+(defparameter *tolerance* 0.00001)
+
+(defun fixed-point (fun first-guess)
+  (labels ((close-enough-p (v1 v2)
+             (< (abs (- v1 v2)) *tolerance*))
+           (try (guess)
+             (let ((next-guess (funcall fun guess)))
+               (if (close-enough-p guess next-guess)
+                   next-guess
+                   (try (print next-guess))))))
+    (try first-guess)))
+
+(fixed-point #'cos 1.0)
+(fixed-point #'(lambda (y) (+ (sin y) (cos y)))
+             1.0)
+(defun fixed-sqrt (x)
+  (fixed-point #'(lambda (y) (average y (/ x y))) 1.0))
+(fixed-sqrt 199)
+#+end_src
+
+#+RESULTS:
+: 14.106736
+
+For me, the book really begins in the higher-order functions section. The iterative vs. recursive process section is also interesting, but the exercises are too mathematical for me.
+
+The major difference I feel between the exercises in SICP and CLGISP is that the exercises don't build on top of each other, whereas the exercises in SICP so far have often built off of each other. CLGISP does have projects that are meant to integrate the lessons learned, but SICP feels like it does that even with normal exercises.
+** SUMMARY
+
+* 2 Building Abstractions with Data
+
+What the hell is even 2.1? I don't know dick about intervals.
+
+2.2.3 is an interesting section.
+#+begin_quote
+In sum-odd-squares, we begin with an enumerator, which generates a “signal” consisting of the leaves of a given tree. This signal is passed through a filter, which eliminates all but the odd elements. The resulting signal is in turn passed through a map, which is a “transducer” that applies the square procedure to each element. The output of the map is then fed to an accumulator, which combines the elements using +, starting from an initial 0.
+...
+Unfortunately, the two procedure definitions above fail to exhibit this signal-flow structure.... If we could organize our programs to make the signal-flow structure manifest in the procedures we write, this would increase the conceptual clarity of the resulting code.
+#+end_quote
+
+** 2.2.3
+*** TODO Exercise 2.42 Eight Queens
+I'm struggling to come up with the solution to this problem, so I am writing my thoughts here to order them.
+
+I've spent a few days working on this and am stumped, so I'm going to skip and come back to it another time.
+**** Things learned
+Here are some things we've learned that I think are relevant to this exercise.
+
+***** POINTS
+We've learned how to make line segments and mess with points.
+
+#+begin_src lisp
+;; Exercise 2.2
+;; Consider the problem of representing line segments in a plane. Each segment is represented as a pair of points:
+;; a starting point and an ending point. Define a constructor make-segment and selectors start-segment and end-segment
+;; that define the representation of segments in terms of points. Furthermore, a point can be represented as a pair of numbers:
+;; the x coordinate and the y coordinate. Accordingly, specify a constructor make-point and selectors x-point and y-point that
+;; define this representation. Finally, using your selectors and constructors, define a procedure midpoint-segment that takes a
+;; line segment as argument and returns its midpoint (the point whose coordinates are the average of the coordinates of the endpoints).
+;; To try your procedures, you’ll need a way to print points:
+
+(defun average (x y)
+  (/ (+ x y) 2.0))
+(defun make-point (x y)
+  (cons x y))
+(defun x-point (point
+)
+  (car point))
+(defun y-point (point)
+  (cdr point))
+(defun make-segment (start-point end-point)
+  (cons start-point end-point))
+(defun segment-start (seg)
+  (car seg))
+(defun segment-end (seg)
+  (cdr seg))
+(defun midpoint-segment (seg)
+  (make-point
+   (average (x-point (segment-start seg)) (x-point (segment-end seg)))
+   (average (y-point (segment-start seg)) (y-point (segment-end seg)))))
+(defun format-point (point)
+  (format nil "~&(~a, ~a)" (x-point point) (y-point point)))
+#+end_src
+
+I believe this may be relevant to the ~safep~ procedure. I think we can create two points from point P and transposing the matrix on the same P to get the column, then check to see which points are directly horizontal or diagonal from the point (in other words, to identify unsafe points).
+
+***** PERMUTATIONS
+
+We've also been provided the ~permutations~ procedure.
+
+#+begin_src lisp
+(defun permutations (s)
+  (if (null s)
+      (list nil)
+      (flatmap #'(lambda (x)
+                   (mapcar #'(lambda (p)
+                               (cons x p))
+                           (permutations
+                            (remove-if #'(lambda (m) (= x m)) s))))
+               s)))
+
+(permutations '(1 2 3 4 5 6 7 8))
+#+end_src
+
+#+RESULTS:
+| (1 2 3 4 5 6 7 8) | (1 2 3 4 5 6 8 7) | (1 2 3 4 5 7 6 8) | (1 2 3 4 5 7 8 6) | (1 2 3 4 5 8 6 7) | (1 2 3 4 5 8 7 6) | (1 2 3 4 6 5 7 8) | (1 2 3 4 6 5 8 7) | (1 2 3 4 6 7 5 8) | (1 2 3 4 6 7 8 5) | (1 2 3 4 6 8 5 7) | (1 2 3 4 6 8 7 5) | (1 2 3 4 7 5 6 8) | (1 2 3 4 7 5 8 6) | (1 2 3 4 7 6 5 8) | (1 2 3 4 7 6 8 5) | (1 2 3 4 7 8 5 6) | (1 2 3 4 7 8 6 5) | (1 2 3 4 8 5 6 7) | (1 2 3 4 8 5 7 6) | (1 2 3 4 8 6 5 7) | (1 2 3 4 8 6 7 5) | (1 2 3 4 8 7 5 6) | (1 2 3 4 8 7 6 5) | (1 2 3 5 4 6 7 8) | (1 2 3 5 4 6 8 7) | (1 2 3 5 4 7 6 8) | (1 2 3 5 4 7 8 6) | (1 2 3 5 4 8 6 7) | (1 2 3 5 4 8 7 6) | (1 2 3 5 6 4 7 8) | (1 2 3 5 6 4 8 7) | (1 2 3 5 6 7 4 8) | (1 2 3 5 6 7 8 4) | (1 2 3 5 6 8 4 7) | (1 2 3 5 6 8 7 4) | (1 2 3 5 7 4 6 8) | (1 2 3 5 7 4 8 6) | (1 2 3 5 7 6 4 8) | (1 2 3 5 7 6 8 4) | (1 2 3 5 7 8 4 6) | (1 2 3 5 7 8 6 4) | (1 2 3 5 8 4 6 7) | (1 2 3 5 8 4 7 6) | (1 2 3 5 8 6 4 7) | (1 2 3 5 8 6 7 4) | (1 2 3 5 8 7 4 6) | (1 2 3 5 8 7 6 4) | (1 2 3 6 4 5 7 8) | (1 2 3 6 4 5 8 7) | (1 2 3 6 4 7 5 8) | (1 2 3 6 4 7 8 5) | (1 2 3 6 4 8 5 7) | (1 2 3 6 4 8 7 5) | (1 2 3 6 5 4 7 8) | (1 2 3 6 5 4 8 7) | (1 2 3 6 5 7 4 8) | (1 2 3 6 5 7 8 4) | (1 2 3 6 5 8 4 7) | (1 2 3 6 5 8 7 4) | (1 2 3 6 7 4 5 8) | (1 2 3 6 7 4 8 5) | (1 2 3 6 7 5 4 8) | (1 2 3 6 7 5 8 4) | (1 2 3 6 7 8 4 5) | (1 2 3 6 7 8 5 4) | (1 2 3 6 8 4 5 7) | (1 2 3 6 8 4 7 5) | (1 2 3 6 8 5 4 7) | (1 2 3 6 8 5 7 4) | (1 2 3 6 8 7 4 5) | (1 2 3 6 8 7 5 4) | (1 2 3 7 4 5 6 8) | (1 2 3 7 4 5 8 6) | (1 2 3 7 4 6 5 8) | (1 2 3 7 4 6 8 5) | (1 2 3 7 4 8 5 6) | (1 2 3 7 4 8 6 5) | (1 2 3 7 5 4 6 8) | (1 2 3 7 5 4 8 6) | (1 2 3 7 5 6 4 8) | (1 2 3 7 5 6 8 4) | (1 2 3 7 5 8 4 6) | (1 2 3 7 5 8 6 4) | (1 2 3 7 6 4 5 8) | (1 2 3 7 6 4 8 5) | (1 2 3 7 6 5 4 8) | (1 2 3 7 6 5 8 4) | (1 2 3 7 6 8 4 5) | (1 2 3 7 6 8 5 4) | (1 2 3 7 8 4 5 6) | (1 2 3 7 8 4 6 5) | (1 2 3 7 8 5 4 6) | (1 2 3 7 8 5 6 4) | (1 2 3 7 8 6 4 5) | (1 2 3 7 8 6 5 4) | (1 2 3 8 4 5 6 7) | (1 2 3 8 4 5 7 6) | (1 2 3 8 4 6 5 7) | (1 2 3 8 4 6 7 5) | (1 2 3 8 4 7 5 6) | (1 2 3 8 4 7 6 5) | (1 2 3 8 5 4 6 7) | (1 2 3 8 5 4 7 6) | (1 2 3 8 5 6 4 7) | (1 2 3 8 5 6 7 4) | (1 2 3 8 5 7 4 6) | (1 2 3 8 5 7 6 4) | (1 2 3 8 6 4 5 7) | (1 2 3 8 6 4 7 5) | (1 2 3 8 6 5 4 7) | (1 2 3 8 6 5 7 4) | (1 2 3 8 6 7 4 5) | (1 2 3 8 6 7 5 4) | (1 2 3 8 7 4 5 6) | (1 2 3 8 7 4 6 5) | (1 2 3 8 7 5 4 6) | (1 2 3 8 7 5 6 4) | (1 2 3 8 7 6 4 5) | (1 2 3 8 7 6 5 4) | (1 2 4 3 5 6 7 8) | (1 2 4 3 5 6 8 7) | (1 2 4 3 5 7 6 8) | (1 2 4 3 5 7 8 6) | (1 2 4 3 5 8 6 7) | (1 2 4 3 5 8 7 6) | (1 2 4 3 6 5 7 8) | (1 2 4 3 6 5 8 7) | (1 2 4 3 6 7 5 8) | (1 2 4 3 6 7 8 5) | (1 2 4 3 6 8 5 7) | (1 2 4 3 6 8 7 5) | (1 2 4 3 7 5 6 8) | (1 2 4 3 7 5 8 6) | (1 2 4 3 7 6 5 8) | (1 2 4 3 7 6 8 5) | (1 2 4 3 7 8 5 6) | (1 2 4 3 7 8 6 5) | (1 2 4 3 8 5 6 7) | (1 2 4 3 8 5 7 6) | (1 2 4 3 8 6 5 7) | (1 2 4 3 8 6 7 5) | (1 2 4 3 8 7 5 6) | (1 2 4 3 8 7 6 5) | (1 2 4 5 3 6 7 8) | (1 2 4 5 3 6 8 7) | (1 2 4 5 3 7 6 8) | (1 2 4 5 3 7 8 6) | (1 2 4 5 3 8 6 7) | (1 2 4 5 3 8 7 6) | (1 2 4 5 6 3 7 8) | (1 2 4 5 6 3 8 7) | (1 2 4 5 6 7 3 8) | (1 2 4 5 6 7 8 3) | (1 2 4 5 6 8 3 7) | (1 2 4 5 6 8 7 3) | (1 2 4 5 7 3 6 8) | (1 2 4 5 7 3 8 6) | (1 2 4 5 7 6 3 8) | (1 2 4 5 7 6 8 3) | (1 2 4 5 7 8 3 6) | (1 2 4 5 7 8 6 3) | (1 2 4 5 8 3 6 7) | (1 2 4 5 8 3 7 6) | (1 2 4 5 8 6 3 7) | (1 2 4 5 8 6 7 3) | (1 2 4 5 8 7 3 6) | (1 2 4 5 8 7 6 3) | (1 2 4 6 3 5 7 8) | (1 2 4 6 3 5 8 7) | (1 2 4 6 3 7 5 8) | (1 2 4 6 3 7 8 5) | (1 2 4 6 3 8 5 7) | (1 2 4 6 3 8 7 5) | (1 2 4 6 5 3 7 8) | (1 2 4 6 5 3 8 7) | (1 2 4 6 5 7 3 8) | (1 2 4 6 5 7 8 3) | (1 2 4 6 5 8 3 7) | (1 2 4 6 5 8 7 3) | (1 2 4 6 7 3 5 8) | (1 2 4 6 7 3 8 5) | (1 2 4 6 7 5 3 8) | (1 2 4 6 7 5 8 3) | (1 2 4 6 7 8 3 5) | (1 2 4 6 7 8 5 3) | (1 2 4 6 8 3 5 7) | (1 2 4 6 8 3 7 5) | (1 2 4 6 8 5 3 7) | (1 2 4 6 8 5 7 3) | (1 2 4 6 8 7 3 5) | (1 2 4 6 8 7 5 3) | (1 2 4 7 3 5 6 8) | (1 2 4 7 3 5 8 6) | (1 2 4 7 3 6 5 8) | (1 2 4 7 3 6 8 5) | (1 2 4 7 3 8 5 6) | (1 2 4 7 3 8 6 5) | (1 2 4 7 5 3 6 8) | (1 2 4 7 5 3 8 6) | (1 2 4 7 5 6 3 8) | (1 2 4 7 5 6 8 3) | (1 2 4 7 5 8 3 6) | (1 2 4 7 5 8 6 3) | (1 2 4 7 6 3 5 8) | (1 2 4 7 6 3 8 5) | (1 2 4 7 6 5 3 8) | (1 2 4 7 6 5 8 3) | (1 2 4 7 6 8 3 5) | (1 2 4 7 6 8 5 3) | (1 2 4 7 8 3 5 6) | (1 2 4 7 8 3 6 5) | (1 2 4 7 8 5 3 6) | (1 2 4 7 8 5 6 3) | (1 2 4 7 8 6 3 5) | (1 2 4 7 8 6 5 3) | (1 2 4 8 3 5 6 7) | (1 2 4 8 3 5 7 6) | (1 2 4 8 3 6 5 7) | (1 2 4 8 3 6 7 5) | (1 2 4 8 3 7 5 6) | (1 2 4 8 3 7 6 5) | (1 2 4 8 5 3 6 7) | (1 2 4 8 5 3 7 6) | (1 2 4 8 5 6 3 7) | (1 2 4 8 5 6 7 3) | (1 2 4 8 5 7 3 6) | (1 2 4 8 5 7 6 3) | (1 2 4 8 6 3 5 7) | (1 2 4 8 6 3 7 5) | (1 2 4 8 6 5 3 7) | (1 2 4 8 6 5 7 3) | (1 2 4 8 6 7 3 5) | (1 2 4 8 6 7 5 3) | (1 2 4 8 7 3 5 6) | (1 2 4 8 7 3 6 5) | (1 2 4 8 7 5 3 6) | (1 2 4 8 7 5 6 3) | (1 2 4 8 7 6 3 5) | (1 2 4 8 7 6 5 3) | (1 2 5 3 4 6 7 8) | (1 2 5 3 4 6 8 7) | (1 2 5 3 4 7 6 8) | (1 2 5 3 4 7 8 6) | (1 2 5 3 4 8 6 7) | (1 2 5 3 4 8 7 6) | (1 2 5 3 6 4 7 8) | (1 2 5 3 6 4 8 7) | (1 2 5 3 6 7 4 8) | (1 2 5 3 6 7 8 4) | (1 2 5 3 6 8 4 7) | (1 2 5 3 6 8 7 4) | (1 2 5 3 7 4 6 8) | (1 2 5 3 7 4 8 6) | (1 2 5 3 7 6 4 8) | (1 2 5 3 7 6 8 4) | (1 2 5 3 7 8 4 6) | (1 2 5 3 7 8 6 4) | (1 2 5 3 8 4 6 7) | (1 2 5 3 8 4 7 6) | (1 2 5 3 8 6 4 7) | (1 2 5 3 8 6 7 4) | (1 2 5 3 8 7 4 6) | (1 2 5 3 8 7 6 4) | (1 2 5 4 3 6 7 8) | (1 2 5 4 3 6 8 7) | (1 2 5 4 3 7 6 8) | (1 2 5 4 3 7 8 6) | (1 2 5 4 3 8 6 7) | (1 2 5 4 3 8 7 6) | (1 2 5 4 6 3 7 8) | (1 2 5 4 6 3 8 7) | (1 2 5 4 6 7 3 8) | (1 2 5 4 6 7 8 3) | (1 2 5 4 6 8 3 7) | (1 2 5 4 6 8 7 3) | (1 2 5 4 7 3 6 8) | (1 2 5 4 7 3 8 6) | (1 2 5 4 7 6 3 8) | (1 2 5 4 7 6 8 3) | (1 2 5 4 7 8 3 6) | (1 2 5 4 7 8 6 3) | (1 2 5 4 8 3 6 7) | (1 2 5 4 8 3 7 6) | (1 2 5 4 8 6 3 7) | (1 2 5 4 8 6 7 3) | (1 2 5 4 8 7 3 6) | (1 2 5 4 8 7 6 3) | (1 2 5 6 3 4 7 8) | (1 2 5 6 3 4 8 7) | (1 2 5 6 3 7 4 8) | (1 2 5 6 3 7 8 4) | (1 2 5 6 3 8 4 7) | (1 2 5 6 3 8 7 4) | (1 2 5 6 4 3 7 8) | (1 2 5 6 4 3 8 7) | (1 2 5 6 4 7 3 8) | (1 2 5 6 4 7 8 3) | (1 2 5 6 4 8 3 7) | (1 2 5 6 4 8 7 3) | (1 2 5 6 7 3 4 8) | (1 2 5 6 7 3 8 4) | (1 2 5 6 7 4 3 8) | (1 2 5 6 7 4 8 3) | (1 2 5 6 7 8 3 4) | (1 2 5 6 7 8 4 3) | (1 2 5 6 8 3 4 7) | (1 2 5 6 8 3 7 4) | (1 2 5 6 8 4 3 7) | (1 2 5 6 8 4 7 3) | (1 2 5 6 8 7 3 4) | (1 2 5 6 8 7 4 3) | (1 2 5 7 3 4 6 8) | (1 2 5 7 3 4 8 6) | (1 2 5 7 3 6 4 8) | (1 2 5 7 3 6 8 4) | (1 2 5 7 3 8 4 6) | (1 2 5 7 3 8 6 4) | (1 2 5 7 4 3 6 8) | (1 2 5 7 4 3 8 6) | (1 2 5 7 4 6 3 8) | (1 2 5 7 4 6 8 3) | (1 2 5 7 4 8 3 6) | (1 2 5 7 4 8 6 3) | (1 2 5 7 6 3 4 8) | (1 2 5 7 6 3 8 4) | (1 2 5 7 6 4 3 8) | (1 2 5 7 6 4 8 3) | (1 2 5 7 6 8 3 4) | (1 2 5 7 6 8 4 3) | (1 2 5 7 8 3 4 6) | (1 2 5 7 8 3 6 4) | (1 2 5 7 8 4 3 6) | (1 2 5 7 8 4 6 3) | (1 2 5 7 8 6 3 4) | (1 2 5 7 8 6 4 3) | (1 2 5 8 3 4 6 7) | (1 2 5 8 3 4 7 6) | (1 2 5 8 3 6 4 7) | (1 2 5 8 3 6 7 4) | (1 2 5 8 3 7 4 6) | (1 2 5 8 3 7 6 4) | (1 2 5 8 4 3 6 7) | (1 2 5 8 4 3 7 6) | (1 2 5 8 4 6 3 7) | (1 2 5 8 4 6 7 3) | (1 2 5 8 4 7 3 6) | (1 2 5 8 4 7 6 3) | (1 2 5 8 6 3 4 7) | (1 2 5 8 6 3 7 4) | (1 2 5 8 6 4 3 7) | (1 2 5 8 6 4 7 3) | (1 2 5 8 6 7 3 4) | (1 2 5 8 6 7 4 3) | (1 2 5 8 7 3 4 6) | (1 2 5 8 7 3 6 4) | (1 2 5 8 7 4 3 6) | (1 2 5 8 7 4 6 3) | (1 2 5 8 7 6 3 4) | (1 2 5 8 7 6 4 3) | (1 2 6 3 4 5 7 8) | (1 2 6 3 4 5 8 7) | (1 2 6 3 4 7 5 8) | (1 2 6 3 4 7 8 5) | (1 2 6 3 4 8 5 7) | (1 2 6 3 4 8 7 5) | (1 2 6 3 5 4 7 8) | (1 2 6 3 5 4 8 7) | (1 2 6 3 5 7 4 8) | (1 2 6 3 5 7 8 4) | (1 2 6 3 5 8 4 7) | (1 2 6 3 5 8 7 4) | (1 2 6 3 7 4 5 8) | (1 2 6 3 7 4 8 5) | (1 2 6 3 7 5 4 8) | (1 2 6 3 7 5 8 4) | (1 2 6 3 7 8 4 5) | (1 2 6 3 7 8 5 4) | (1 2 6 3 8 4 5 7) | (1 2 6 3 8 4 7 5) | (1 2 6 3 8 5 4 7) | (1 2 6 3 8 5 7 4) | (1 2 6 3 8 7 4 5) | (1 2 6 3 8 7 5 4) | (1 2 6 4 3 5 7 8) | (1 2 6 4 3 5 8 7) | (1 2 6 4 3 7 5 8) | (1 2 6 4 3 7 8 5) | (1 2 6 4 3 8 5 7) | (1 2 6 4 3 8 7 5) | (1 2 6 4 5 3 7 8) | (1 2 6 4 5 3 8 7) | (1 2 6 4 5 7 3 8) | (1 2 6 4 5 7 8 3) | (1 2 6 4 5 8 3 7) | (1 2 6 4 5 8 7 3) | (1 2 6 4 7 3 5 8) | (1 2 6 4 7 3 8 5) | (1 2 6 4 7 5 3 8) | (1 2 6 4 7 5 8 3) | (1 2 6 4 7 8 3 5) | (1 2 6 4 7 8 5 3) | (1 2 6 4 8 3 5 7) | (1 2 6 4 8 3 7 5) | (1 2 6 4 8 5 3 7) | (1 2 6 4 8 5 7 3) | (1 2 6 4 8 7 3 5) | (1 2 6 4 8 7 5 3) | (1 2 6 5 3 4 7 8) | (1 2 6 5 3 4 8 7) | (1 2 6 5 3 7 4 8) | (1 2 6 5 3 7 8 4) | (1 2 6 5 3 8 4 7) | (1 2 6 5 3 8 7 4) | (1 2 6 5 4 3 7 8) | (1 2 6 5 4 3 8 7) | (1 2 6 5 4 7 3 8) | (1 2 6 5 4 7 8 3) | (1 2 6 5 4 8 3 7) | (1 2 6 5 4 8 7 3) | (1 2 6 5 7 3 4 8) | (1 2 6 5 7 3 8 4) | (1 2 6 5 7 4 3 8) | (1 2 6 5 7 4 8 3) | (1 2 6 5 7 8 3 4) | (1 2 6 5 7 8 4 3) | (1 2 6 5 8 3 4 7) | (1 2 6 5 8 3 7 4) | (1 2 6 5 8 4 3 7) | (1 2 6 5 8 4 7 3) | (1 2 6 5 8 7 3 4) | (1 2 6 5 8 7 4 3) | (1 2 6 7 3 4 5 8) | (1 2 6 7 3 4 8 5) | (1 2 6 7 3 5 4 8) | (1 2 6 7 3 5 8 4) | (1 2 6 7 3 8 4 5) | (1 2 6 7 3 8 5 4) | (1 2 6 7 4 3 5 8) | (1 2 6 7 4 3 8 5) | (1 2 6 7 4 5 3 8) | (1 2 6 7 4 5 8 3) | (1 2 6 7 4 8 3 5) | (1 2 6 7 4 8 5 3) | (1 2 6 7 5 3 4 8) | (1 2 6 7 5 3 8 4) | (1 2 6 7 5 4 3 8) | (1 2 6 7 5 4 8 3) | (1 2 6 7 5 8 3 4) | (1 2 6 7 5 8 4 3) | (1 2 6 7 8 3 4 5) | (1 2 6 7 8 3 5 4) | (1 2 6 7 8 4 3 5) | (1 2 6 7 8 4 5 3) | (1 2 6 7 8 5 3 4) | (1 2 6 7 8 5 4 3) | (1 2 6 8 3 4 5 7) | (1 2 6 8 3 4 7 5) | (1 2 6 8 3 5 4 7) | (1 2 6 8 3 5 7 4) | (1 2 6 8 3 7 4 5) | (1 2 6 8 3 7 5 4) | (1 2 6 8 4 3 5 7) | (1 2 6 8 4 3 7 5) | (1 2 6 8 4 5 3 7) | (1 2 6 8 4 5 7 3) | (1 2 6 8 4 7 3 5) | (1 2 6 8 4 7 5 3) | (1 2 6 8 5 3 4 7) | (1 2 6 8 5 3 7 4) | (1 2 6 8 5 4 3 7) | (1 2 6 8 5 4 7 3) | (1 2 6 8 5 7 3 4) | (1 2 6 8 5 7 4 3) | (1 2 6 8 7 3 4 5) | (1 2 6 8 7 3 5 4) | (1 2 6 8 7 4 3 5) | (1 2 6 8 7 4 5 3) | (1 2 6 8 7 5 3 4) | (1 2 6 8 7 5 4 3) | (1 2 7 3 4 5 6 8) | (1 2 7 3 4 5 8 6) | (1 2 7 3 4 6 5 8) | (1 2 7 3 4 6 8 5) | (1 2 7 3 4 8 5 6) | (1 2 7 3 4 8 6 5) | (1 2 7 3 5 4 6 8) | (1 2 7 3 5 4 8 6) | (1 2 7 3 5 6 4 8) | (1 2 7 3 5 6 8 4) | (1 2 7 3 5 8 4 6) | (1 2 7 3 5 8 6 4) | (1 2 7 3 6 4 5 8) | (1 2 7 3 6 4 8 5) | (1 2 7 3 6 5 4 8) | (1 2 7 3 6 5 8 4) | (1 2 7 3 6 8 4 5) | (1 2 7 3 6 8 5 4) | (1 2 7 3 8 4 5 6) | (1 2 7 3 8 4 6 5) | (1 2 7 3 8 5 4 6) | (1 2 7 3 8 5 6 4) | (1 2 7 3 8 6 4 5) | (1 2 7 3 8 6 5 4) | (1 2 7 4 3 5 6 8) | (1 2 7 4 3 5 8 6) | (1 2 7 4 3 6 5 8) | (1 2 7 4 3 6 8 5) | (1 2 7 4 3 8 5 6) | (1 2 7 4 3 8 6 5) | (1 2 7 4 5 3 6 8) | (1 2 7 4 5 3 8 6) | ... |
+
+This procedure produces all of the possible unique configurations of numbers in a list of numbers.
+
+I believe this is important since we are essentially going to have to produce all of the possible permutations of the chess board with 8 safe queens on it. To do that, I believe this is going to require making permutations for each row, taking into account the position of the queen on the previous row in all previous permutations. A set of permutations for every previous set of permutations.
+
+***** LINEAR ALGEBRA OPERATIONS
+We've also learned how to transpose a matrix and do some linear algebra operations on a matrix.
+
+#+begin_src lisp
+;; Exercise 2.37
+
+(defparameter *matrix* '((1 2 3 4)
+                         (4 5 6 6)
+                         (6 7 8 9)))
+
+(defparameter *vec* '(4 7 8 2))
+
+(defun dot-product (v w)
+  (reduce #'+ (mapcar #'* v w)))
+
+(defun matrix-*-vector (m v)
+  (mapcar #'(lambda (x) (dot-product x v)) m))
+
+(defun transpose (m)
+  (if (null (first m))
+      nil
+      (cons (mapcar #'(lambda (x) (first x)) m)
+            (transpose (mapcar #'(lambda (x) (rest x)) m)))))
+
+(defun matrix-*-matrix (m n)
+  (mapcar #'(lambda (v) (matrix-*-vector (transpose n) v)) m))
+
+(transpose *matrix*)
+#+end_src
+
+#+RESULTS:
+| 1 | 4 | 6 |
+| 2 | 5 | 7 |
+| 3 | 6 | 8 |
+| 4 | 6 | 9 |
+
+I think that transposing will be important for creating points. I don't know if the other operations are going to be helpful for solving this exercise.
+**** Observations
+***** MATRIX USING ENUMERATE-INTERVAL
+Using enumerate-interval to make a matrix,
+
+#+begin_src lisp
+(list
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8)
+ (enumerate-interval 1 8))
+#+end_src
+
+#+RESULTS:
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+
+~mapcar~ will go through each "row" of the matrix. To get the column, we can use ~transpose~.
+
+#+begin_src lisp
+(transpose (list
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)
+            (enumerate-interval 1 8)))
+#+end_src
+
+#+RESULTS:
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 |
+| 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 |
+| 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 |
+| 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 |
+| 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 |
+| 8 | 8 | 8 | 8 | 8 | 8 | 8 | 8 |
+
+The problem here is: How do we actually create the final matrices? How do we represent the position of the queen?
+
+Maybe we should have a matrix of points and skip the transposing?
+
+#+begin_src lisp
+(mapcar #'(lambda (x y) (make-point x y))
+        (make-matrix 8) (transpose (make-matrix 8)))
+#+end_src
+
+**** Data representation
+I've been pondering two questions:
+
+1. How do I represent the data?
+2. How do I show the position of the queen?
+
+I considered a matrix of points, as I said above. But, I think the solution has presented itself to me after carefully reading the problem again.
+
+#+begin_quote
+The “eight-queens puzzle” asks how to place eight queens on a chessboard so that no queen is in check from any other (i.e., no two queens are in the same row, column, or diagonal). ...
+
+One way to solve the puzzle is to work across the board, *placing a queen in each column.* Once we have placed k−1 queens, we must place the kth queen in a position where it does not check any of the queens already on the board. We can formulate this approach recursively: Assume that we have already generated the sequence of all possible ways to place k−1 queens in the first k−1 columns of the board. For each of these ways, generate an extended set of positions by placing a queen in each row of the kth column. Now filter these, keeping only the positions for which the queen in the kth column is safe with respect to the other queens. This produces the sequence of all ways to place k queens in the first k columns. By continuing this process, *we will produce not only one solution, but all solutions to the puzzle*.
+#+end_quote
+
+"Placing a queen in each column" at first sounds like placing one queen in each column, but then "we will produce not only one solution, but all solutions to the puzzle" makes it fairly clear that we are actually placing ALL the queens in every safe position possible. In other words, the first vector in the matrix, like ~'(1 2 3 4 5 6 7 8)~, doesn't need to only hold one queen, it can hold ALL queens.
+
+Then, the next vector can also hold ALL queens. In other words, instead of thinking of "the position of the queen", we need to think of ALL the positions of ALL the queens in each vector.
+
+There is another important observation: we are suppose to place 8 queens on an 8x8 matrix. They must also be placed in a way that they are all "safe". That means there can only be one queen in each row, and only one in each column, and those positions can't be changed at all.
+
+Now, if we are creating "not only one solution, but all solutions to the puzzle", that means that the number of possible configurations for queens is actually much smaller than you might at first imagine. Not only must there only be one queen in each row and column, but they also can't be configured in such a way so that they are diagonally unsafe.
+
+So, I believe that for any 8x8 matrix there can only be 8 possible queen configurations.
+
+That means that for every place k_n, that represents the one and only possible configuration of that nth queen.
+
+That also means that the ~queens~ procedure isn't going to return several different matrices representing the different possible configurations. It will return one matrix that represents all 8 possible configurations in parallel.
+
+This problem is similar to the Sudoku or Number Play game, where again there is a 9x9 matrix of numbers, split into 9 blocks of 3x3 matrices, and no number can be present more than once in a row or column of the larger 9x9 matrix, nor can any number be present more than once in any of the 3x3 inner matrices.
+
+**** SAFEP
+So now the question is, how do I know what a safe vector is?
+
+#+begin_quote
+You must also write the procedure safe?, which determines for a set of positions, whether the queen in the kth column is safe with respect to the others. (Note that we need only check whether the new queen is safe—the other queens are already guaranteed safe with respect to each other.)
+#+end_quote
+
+If we are presented with all of the permutations of ~'(1 2 3 4 5 6 7 8)~, how do we know which of those permutations is safe? What property do we need to look for in a permutation?
+
+#+begin_src lisp
+(defun queens (board-size)
+  "A procedure that produces every permutation of chess board with eight queens on it where
+all of the queens on it are safe."
+  (labels ((queen-cols (k)
+             (if (= k 0)
+                 (list *empty-board*)
+                 (remove-if-not
+                  #'(lambda (positions) (safep k positions))
+                  (flatmap
+                   #'(lambda (rest-of-queens)
+                       (mapcar
+                        #'(lambda (new-row)
+                            (adjoin-position new-row k rest-of-queens))
+                        (enumerate-interval 1 board-size)))
+                   (queen-cols (- k 1)))))))
+    (queen-cols board-size)))
+#+end_src
+
+SAFEP will have access to the current number/queen, so it can look at all previous vectors and check where it's safe relative to them. Checking the other columns is easy (we can ~transpose~ ~positions~ to look for the same ~member~ number ~k~ in them), but what about diagonals?
+
+For column ~k~, the previous row's ~k~ is unsafe, the neighboring columns (1+ k) and (1- k) for the new-row are also unsafe because we know they are diagonal.
+**** ADJOIN-POSITION
+#+begin_src lisp
+(defun adjoin-position (row position rest-of-queens)
+  "A procedure that adjoins a new row-column position to a set of positions.")
+#+end_src
+The ADJOIN-POSITION procedure will have knowledge of the following information:
+1. The current row number (between 1 and BOARD-SIZE)
+2. The current queen number/position, ~k~, (between 1 and BOARD-SIZE)
+3. The state of the matrix so far
+* 3 MODULARITY, OBJECTS, AND STATE
+** 3.1
+*** 3.1.1 Local State Variables
+Closures are introduced.
+
+#+begin_src lisp
+(defun make-account (balance)
+  (flet ((withdraw (amount)
+           (if (>= balance amount)
+               (begin (setf balance
+                            (- balance amount))
+                      balance)
+               "Insufficient funds"))
+         (deposit (amount)
+           (setf balance (+ balance amount))
+           balance)
+         (dispatch (m)
+           (cond ((eql m 'withdraw) withdraw)
+                 ((eql m 'deposit) deposit)
+                 (t (error "Unknown request:
+                 MAKE-ACCOUNT" m)))))
+    #'dispatch))
+
+
+(defparameter *acct* (make-account 100))
+
+
+(defun make-accumulator (n)
+  (let ((sum 0))
+    (lambda (x) (setf sum (+ x sum))
+      sum)))
+
+(setf A (make-accumulator 5))
+
+(funcall A 5)
+
+
+(defun make-monitored (fun)
+  (let ((times 0))
+    (lambda (x)
+      (progn (if (eql x 'times-called)
+                 times
+                 (funcall fun x))
+             (setf times (+ 1 times)))
+      fun)))
+
+(defparameter *mf* (make-monitored #'make-accumulator))
+
+(funcall *mf* 5)
+#+end_src
