@@ -14,7 +14,6 @@ Has exercises labeled with four difficulty levels:
 | d     | difficult | days               |
 
 ** Chapter 01 - Introduction to Lisp
-*** NOTES
 Just the basics. If you did Touretzky's book, you don't really need to read it.
 
 Norvig seems to prefer ~FIRST~, ~LAST~, etc. over ~CAR~ and ~CDR~. [[https://www.xach.com/naggum/articles/3092837184154309@naggum.no.html][According to Erik Naggum]], the ~LIST~ abstraction is designed to be different from the ~CONS~ abstraction, and as such, it seems ~FIRST~, ~LAST~, etc. are specific to the ~LIST~ abstraction
@@ -30,264 +29,11 @@ One thing I didn't notice while completing Touretzky's book: ~FIRST~, ~SECOND~, 
 | (THREE TWO) | ONE |
 
 ** Chapter 02 - A Simple Lisp Program
-*** CODE
-**** Complex
-#+begin_src lisp
-;;; Rules:
-;; Sentence => Noun-Phrase + Verb-Phrase
-;; Noun-Phrase => Article + Noun
-;; Verb-Phrase => Verb + Noun-Phrase
-;; Article => the, a, ...
-;; Noun => man, ball, woman, table...
-;; Verb => hit, took, saw, liked...
-
-;; The complex approach
-;; Why is this complex?
-;;; 1. The code is more complex than the rules as defined in natural language.
-;;; 2. Adding new rules requires an understanding of Common Lisp semantics.
-;;; You need conditionals, you need to understand DEFUN, parameter lists, APPEND, etc.
-
-(defun sentence ()    (append (noun-phrase) (verb-phrase)))
-(defun noun-phrase () (append (Article) (Noun)))
-(defun verb-phrase () (append (Verb) (noun-phrase)))
-(defun Article ()     (one-of '(the a)))
-(defun Noun ()        (one-of '(man ball woman table)))
-(defun Verb ()        (one-of '(hit took saw liked)))
-
-
-(defun one-of (set)
-  "Pick one element of set, and make a list of it."
-  (list (random-elt set)))
-
-(defun random-elt (choices)
-  "choose an element from a list at random."
-  (elt choices (random (length choices))))
-
-(defun Adj* ()
-  (if (= (random 2) 0)
-      nil
-      (append (Adj) (Adj*))))
-
-(defun PP* ()
-  (if (random-elt '(t nil))
-      (append (PP) (PP*))
-      nil))
-
-;;; What if you don't want to use conditionals, but rely on the data-type itself?
-;;; With the complex code, can't.
-;; (defun Adj* ()
-;;   "Warning - incorrect definition of Adjectives."
-;;   (one-of '(nil (append (Adj) (Adj*))))
-;;   )
-                                        ; returns '(nil (append (Adj) (Adj*)))
-;; (defun Adj* ()
-;;   "Warning - incorrect definition of Adjectives."
-;;   (one-of (list nil (append (Adj) (Adj*))))
-;;   )
-                                        ; infinite loop
-
-;; Code complexity will continue to increase as more grammar rules are added. Lisp knowledge necessary for creating rules. Original code will also need to be modified to add more rules.
-
-;; NOUN-PHRASE modified to account for optional adj and pp
-(defun noun-phrase () (append (Article) (Adj*) (Noun) (PP*)))
-(defun PP () (append (Prep) (noun-phrase)))
-(defun Adj () (one-of '(big little blue green adiabatic)))
-(defun Prep () (one-of '(to in by with on)))
-
-(sentence)
-#+end_src
-
-#+RESULTS:
-| THE | BLUE | LITTLE | BALL | BY | A | GREEN | BLUE | MAN | TOOK | THE | BIG | MAN | IN | A | TABLE |
-
-**** Simple
-#+begin_src lisp
-;;; Rules:
-;; Sentence => Noun-Phrase + Verb-Phrase
-;; Noun-Phrase => Article + Noun
-;; Verb-Phrase => Verb + Noun-Phrase
-;; Article => the, a, ...
-;; Noun => man, ball, woman, table...
-;; Verb => hit, took, saw, liked...
-
-
-;; The simple, rules-based approach. Data-driven programming.
-;; Notice the similarity of the code and rules above.
-(defparameter *simple-grammar*
-  '((sentence -> (noun-phrase verb-phrase))
-    (noun-phrase -> (Article Noun))
-    (verb-phrase -> (Verb noun-phrase))
-    (Article -> the a)
-    (Noun -> man ball woman table)
-    (Verb -> hit took saw liked))
-  "A grammar for a trivial subset of English.")
-
-(defvar *grammar* *simple-grammar*
-  "The grammar used by generate.  Initially, this is
-  ,*simple-grammar*, but we can switch to other grammars.")
-
-(defun random-elt (choices)
-  "choose an element from a list at random."
-  (elt choices (random (length choices))))
-
-(defun rule-lhs (rule)
-  "The left-hand side of a rule."
-  (first rule))
-
-(defun rule-rhs (rule)
-  "The right-hand side of a rule."
-  (rest (rest rule)))
-
-(defun rewrites (category)
-  "Return a list of the possible rewrites for this category."
-  (rule-rhs (assoc category *grammar*)))
-
-(defun mappend (fn the-list)
-  "Apply fn to each element of list and append the results."
-  (apply #'append (mapcar fn the-list)))
-
-;; (defun generate (phrase)
-;;   "Generate a random sentence or phrase"
-;;   (cond ((listp phrase)
-;;          (mappend #'generate phrase))
-;;         ((rewrites phrase)
-;;          (generate (random-elt (rewrites phrase))))
-;;         (t (list phrase))))
-
-;; (defun generate (phrase)
-;;   "Generate a random sentence or phrase. Alternate version that avoids calling (rewrites phrase) twice."
-;;   (if (listp phrase)
-;;       (mappend #'generate phrase)
-;;       (let ((choices (rewrites phrase)))
-;;         (if (null choices)
-;;             (list phrase)
-;;             (generate (random-elt choices))))))
-
-;; (defun generate (phrase)
-;;   "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.1"
-;;   (let ((choices (rewrites phrase)))
-;;     (cond ((listp phrase)
-;;            (mappend #'generate phrase))
-;;           ((null choices) (list phrase))
-;;           (t (generate (random-elt choices))))))
-
-(defun generate (phrase)
-  "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.2"
-  (let* ((choices (rewrites phrase))
-         (terminal (null choices)))
-    (cond ((listp phrase)
-           (mappend #'generate phrase))
-          (terminal (list phrase))
-          (t (generate (random-elt choices))))))
-
-(defparameter *bigger-grammar*
-  '((sentence -> (noun-phrase verb-phrase))
-    (noun-phrase -> (Article Adj* Noun PP*) (Name) (Pronoun))
-    (verb-phrase -> (Verb noun-phrase PP*))
-    (PP* -> () (PP PP*))
-    (Adj* -> () (Adj Adj*))
-    (PP -> (Prep noun-phrase))
-    (Prep -> to in by with on)
-    (Adj -> big little blue green adiabatic)
-    (Article -> the a)
-    (Name -> Pat Kim Lee Terry Robin)
-    (Noun -> man ball woman table)
-    (Verb -> hit took saw liked)
-    (Pronoun -> he she it these those that)))
-
-(setf *grammar* *bigger-grammar*)
-;; (setf *grammar* *simple-grammar*)
-
-(defun generate-tree (phrase)
-  "Generate a random sentence or phrase,
-  with a complete parse tree."
-  (cond ((listp phrase)
-         (mapcar #'generate-tree phrase))
-        ((rewrites phrase)
-         (cons phrase
-               (generate-tree (random-elt (rewrites phrase)))))
-        (t (list phrase))))
-(generate-tree 'sentence)
-
-;; !WARNING!WARNING!WARNING!WARNING!WARNING!WARNING!
-;; When used with recursive grammar like PP*, Adj*, etc.
-;; generate-all will produce an infinite loop.
-;; Only use on simple grammar.
-;; !WARNING!WARNING!WARNING!WARNING!WARNING!WARNING!
-(defun generate-all (phrase)
-  "Generate a list of all possible expansions of this phrase."
-  (cond ((null phrase) (list nil))
-        ((listp phrase)
-         (combine-all (generate-all (first phrase))
-                      (generate-all (rest phrase))))
-        ((rewrites phrase)
-         (mappend #'generate-all (rewrites phrase)))
-        (t (list (list phrase)))))
-
-(defun combine-all (xlist ylist)
-  "Return a list of lists formed by appending a y to an x.
-  E.g., (combine-all '((a) (b)) '((1) (2)))
-  -> ((A 1) (B 1) (A 2) (B 2))."
-  (mappend #'(lambda (y)
-               (mapcar #'(lambda (x) (append x y)) xlist))
-           ylist))
-
-(defparameter *japanese-grammar*
-  "Unfinished grammar for Japanese. ANSWER TO EXERCISE 2.3"
-  '((sentence -> (noun-phrase verb-phrase))
-    (noun-phrase -> (Noun PP* Article Adj* Noun) (Name) (Pronoun))
-    (verb-phrase -> (Verb noun-phrase PP*))
-    (PP* -> () (PP PP*))
-    (Adj* -> () (Adj Adj*))
-    (PP -> (Prep noun-phrase))
-    (Prep -> に と の上に の中に で)
-    (Adj -> 大きい 小さな 青い 緑の)
-    (Article -> が を)
-    (Name -> 恵梛 美風 マイカ 隆恵)
-    (Noun -> 男性 球 女性 テーブル)
-    (Verb -> 見た 好きだった 蹴った 取った)
-    (Pronoun -> 彼 彼女 それ これら それら あれ)))
-
-(setf *grammar* *japanese-grammar*)
-(generate 'sentence)
-
-#+end_src
-
-*** EXERCISES
-**** Exercise 2.1 [m] Write a version of generate that uses cond but avoids calling rewrites twice.
-#+begin_src lisp
-(defun generate (phrase)
-  "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.1"
-  (let ((choices (rewrites phrase)))
-    (cond ((listp phrase)
-           (mappend #'generate phrase))
-          ((null choices) (list phrase))
-          (t (generate (random-elt choices))))))
-#+end_src
-
-**** Exercise 2.2 [m] Write a version of generate that explicitly differentiates between terminal symbols (those with no rewrite rules) and nonterminal symbols.
-
-#+begin_src lisp
-(defun generate (phrase)
-  "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.2"
-  (let* ((choices (rewrites phrase))
-         (terminal (null choices)))
-    (cond ((listp phrase)
-           (mappend #'generate phrase))
-          (terminal (list phrase))
-          (t (generate (random-elt choices))))))
-#+end_src
-
-**** PROJ Exercise 2.3 [h] Write a trivial grammar for some other language. This can be a natural language other than English, or perhaps a subset of a computer language.
-
-**** Exercise 2.4 [m] One way of describing combine-all is that it calculates the cross-product of the function append on the argument lists. Write the higher-order function cross-product, and define combine-all in terms of it.
-
-*** NOTES
 :LOGBOOK:
 CLOCK: [2024-09-15 Sun 14:48]--[2024-09-15 Sun 15:59] =>  1:11
 CLOCK: [2024-09-15 Sun 07:46]--[2024-09-15 Sun 12:19] =>  4:33
 :END:
-**** RULES
+*** RULES
 This chapter introduces rule-based programming. Rich Hickey says that rules are simpler (and more preferable) than conditionals.
 
 Norvig says something similar.
@@ -310,7 +56,7 @@ The addition of a larger grammar demonstrates how easy it is to extend the gramm
 
 The simpler version also allows us to easily add features without modifying many disparate functions or files.
 
-**** INTRODUCING AND USING VARIABLES
+*** INTRODUCING AND USING VARIABLES
 #+begin_quote
 let is the most common way of introducing variables that are not parameters of functions. One must resist the temptation to use a variable without introducing it:
 
@@ -323,50 +69,10 @@ Here we see the expression "introducing variables".
 
 
 ** Chapter 03 - Overview of Lisp
-*** EXERCISES
-**** Exercise 3.1 [m] Show a lambda expression that is equivalent to the above let* expression. You may need more than one lambda.
-#+begin_src lisp
-(let* ((x 6)
-       (y (* x x)))
-  (+ x y))
-
-(funcall (lambda (a b) (+ a b))
-         6
-         (funcall (lambda (y) (* y y)) 6))
-#+end_src
-
-#+RESULTS:
-: 42
-
-**** Exercise 3.2 [s] The function cons can be seen as a special case of one of the other functions listed previously. Which one?
-push
-**** Exercise 3.3 [m] Write a function that will print an expression in dotted pair notation. Use the built-in function princ to print each component of the expression.
-**** Exercise 3.4 [m] Write a function that, like the regular print function, will print an expression in dotted pair notation when necessary but will use normal list notation when possible.
-**** Exercise 3.5 [h] (Exercise in altering structure.) Write a program that will play the role of the guesser in the game Twenty Questions. The user of the program will have in mind any type of thing. The program will ask questions of the user, which must be answered yes or no, or "it" when the program has guessed it. If the program runs out of guesses, it gives up and asks the user what "it" was. At first the program will not play well, but each time it plays, it will remember the user's replies and use them for subsequent guesses.
-**** Exercise 3.6 [s] Given the following initialization for the lexical variable a and the special variable *b*, what will be the value of the let form?
-#+begin_src lisp
-(setf a 'global-a)
-(defvar *b* 'global-b)
-
-(defun fn () *b*)
-
-(let ((a 'local-a)
-      (*b* 'local-b))
-  (list a *b* (fn) (symbol-value 'a) (symbol-value '*b*)))
-#+end_src
-
-#+RESULTS:
-| LOCAL-A | LOCAL-B | LOCAL-B | GLOBAL-A | LOCAL-B |
-
-**** Exercise 3.7 [s] Why do you think the leftmost of two keys is the one that counts, rather than the rightmost?
-They're read first.
-**** Exercise 3.8 [m] Some versions of Kyoto Common Lisp (KCL) have a bug wherein they use the rightmost value when more than one keyword/value pair is specified for the same keyword. Change the definition of find-all so that it works in KCL.
-*** NOTES
 :LOGBOOK:
 CLOCK: [2024-09-16 Mon 17:01]--[2024-09-17 Tue 13:59] => 20:58
 :END:
-
-**** 3.1 A GUIDE TO LISP STYLE
+*** 3.1 A GUIDE TO LISP STYLE
 #+begin_quote
 Be specific.
 Use abstractions.
@@ -377,7 +83,7 @@ Be consistent.
 #+end_quote
 
 There are some specific parts of Lisp here that weren't covered in Touretzky (DEFINE-SETF-METHOD, DEFSETF, etc.), and it has very useful comparison charts showing comparisons between Common Lisp and Pascal. I see them, plus [[https://www.norvig.com/python-lisp.html][Norvig's own comparison]] to Python, as a great starting point for comparing Python and JS in the masterclass.
-**** SPECIAL FORMS
+*** SPECIAL FORMS
 | definitions  | conditional | variables | iteration | other    |
 |--------------+-------------+-----------+-----------+----------|
 | defun        | and         | let       | do        | declare  |
@@ -388,9 +94,238 @@ There are some specific parts of Lisp here that weren't covered in Touretzky (DE
 | defmacro     | unless      | incf      |           | trace    |
 | labels       | when        | decf      |           | untrace  |
 
+*** FUNCTIONS
+There are functions for working with different kinds of data.
+
+- Lists
+- Sequences
+- Tables (assoc, make-hash-table)
+- Trees
+- Numbers
+- Sets
+
+*** PRINT AND PRINC
+#+begin_src lisp
+(with-open-file (stream "test.text" :direction :output)
+    (print '(hello there) stream)
+    (princ 'goodbye stream))
+
+(with-open-file (stream "test.text" :direction :input)
+    (list (read stream) (read-char stream) (read stream)
+          (read stream nil 'eof)))
+#+end_src
+*** ERRORS
+#+begin_src lisp
+;; Assert can also include an error message to show in SLIME/SLY
+(defun squirt (num)
+  "Square a number"
+  (assert (numberp num) (num)
+          "~s ain't a number you retard." num)
+  (* num num))
+#+end_src
+*** MULTIPLE VALUES
+**** RETURNING MULTIPLE VALUES
+#+begin_src lisp
+(values 1 2 3)
+#+end_src
+
+#+RESULTS:
+: 1
+
+Usually, for functions that return multiple values, all but the first value are ignored. ~round~ is an example.
+
+#+begin_src lisp
+(round 42.69)
+#+end_src
+
+#+RESULTS:
+: 43
+
+**** BINDING MULTIPLE RETURNED VALUES
+If you want to access the other values that are otherwise ignored, use ~multiple-value-bind~.
+
+#+begin_src lisp
+(multiple-value-bind (int rem)
+    (round 42.69)
+  (format nil "~&~a is the integer, and ~a is the remainder." int rem))
+#+end_src
+
+#+RESULTS:
+: 43 is the integer, and -0.31000137 is the remainder.
+
+#+begin_src lisp
+(multiple-value-bind (a b c) (values 1 2 3)
+  (print c))
+#+end_src
+
+#+RESULTS:
+: 3
+*** MATCHING FUNCTIONS
+Functions that have a ~:test~, ~:test-not~, or ~:key~ parameter are called "matching functions". They include:
+
+- sublis (tree function)
+- subst (tree function)
+- union (set function)
+- member (set function)
+- intersection (set function)
+- set-difference (set function)
+- subsetp (set function)
+- position (sequence function)
+- remove (sequence function)
+- remove-if (sequence function)
+- remove-if-not (sequence function)
+- find (sequence function)
+- assoc (table function)
+- rassoc (table function)
+
+  #+begin_quote
+  By default, each [matching function] tests if some item is eql to one or more of a series of other objects.
+  #+end_quote
+*** SEQUENCE FUNCTIONS
+#+begin_quote
+The most common type of sequence is the list, but strings and vectors can also be used as sequences. A sequence function performs some action repeatedly for some elements of a sequence.
+#+end_quote
+*** ALIASING BUILT-IN FUNCTIONS
+#+begin_quote
+It is sometimes useful to have two names for the same function viewed in different ways (like not and null). The new name could be defined with a defun, but it is easier to just copy over the definition:
+#+end_quote
+
+#+begin_src lisp
+(setf (symbol-function 'find-all-if) #'remove-if-not)
+#+end_src
+
+#+RESULTS:
+: #<FUNCTION REMOVE-IF-NOT>
+
+Now ~find-all-if~ aliases ~remove-if-not~. They do exactly the same thing.
+
+#+begin_src lisp
+(remove-if-not #'oddp '(1 2 3 4 5 6 7 8 9))
+#+end_src
+
+#+RESULTS:
+| 1 | 3 | 5 | 7 | 9 |
+
+#+begin_src lisp
+(find-all-if #'oddp '(1 2 3 4 5 6 7 8 9))
+#+end_src
+
+#+RESULTS:
+| 1 | 3 | 5 | 7 | 9 |
+
 ** Chapter 04 - GPS: The Genera Problem Solver
+*** SEMIPREDICATES
+#+begin_quote
+Functions that return nil as an indication of failure and return some useful value otherwise are known as semipredicates. They are error prone in just these cases where nil might be construed as a useful value. Be careful when defining and using semipredicates: (1) Decide if nil could ever be a meaningful value. (2) Insure that the user can't corrupt the program by supplying nil as a value. In this program, GPS is the only function the user should call, so once we have accounted for it, we're covered. (3) Insure that the program can't supply nil as a value.
+#+end_quote
+
+*** SWITCHING FROM DESTRUCTIVE TO NON-DESTRUCTIVE OPERATION
+#+begin_quote
+The function apply-op, which used to change the state irrevocably and print a message reflecting this, now returns the new state instead of printing anything.
+#+end_quote
+Switching from imperative to functional style.
+*** PUNS
+#+begin_quote
+If we go back and look at the function `GPS`, we find that it reports the result by removing all atoms from the state returned by `achieve-all`.
+This is a "pun"-we said remove atoms, when we really meant to remove all conditions except the `(START)` and `(EXECUTING *action*)` forms.
+Up to now, all these conditions were atoms, so this approach worked.
+The maze domain introduced conditions of the form (`AT` *n*), so for the first time there was a problem.
+The moral is that when a programmer uses puns-saying what's convenient instead of what's really happening-there's bound to be trouble.
+What we really want to do is not to remove atoms but to find all elements that denote actions.
+#+end_quote
+
+In other words, the "straightforward" solution is again insufficient to the task.
+
+After the example here and previously in chapter 2, the question is: should we begin with the straightforward solution first, or should be begin with the abstraction that codifies our real, full intention? This is just another variant of the discussion regarding abstraction and "premature abstraction".
+
+This is one of those philosophical divides that inevitably sends programmers in vastly different directions career and self-development wise.
+
+My feeling is this: if you know your full intentions, you should probably codify them if the effort isn't too high. You should simply be comfortable with making big, scary refactors of your code if you realize that your choice to leave puns in your code is now a problem. Since you don't know for certain if an abstraction is necessary or not, every choice to abstract or not is accompanied by some risk. You risk doing too much work now that is later found to be unnecessary, or you do too little work now that is found to be necessary.
+
+I think the choice to abstract or not is usually a sign of programmer maturity and skill level. The skilled and mature programmer will often tend toward more abstractions earlier both because they have the experience to know which abstractions are likely to be useful, but they'll also probably prefer fewer, simpler abstractions with greater reach.
+
+*** SET-DIFFERENCE & UNION VS. REMOVE-IF & APPEND
+
+There are two versions of ~apply-op~. The first one is this:
+#+begin_src lisp
+(defun apply-op (op)
+  "Print a message and update *state* if op is applicable."
+  (when (every #'achieve (op-preconds op))
+    (print (list 'executing (op-action op)))
+    (setf *state* (set-difference *state* (op-del-list op)))
+    (setf *state* (union *state* (op-add-list op)))
+  t))
+
+#+end_src
+The second is this:
+#+begin_src lisp
+(defun apply-op (state goal op goal-stack)
+  "Print a message and update *state* if op is applicable."
+  (dbg-indent :gps (length goal-stack) "Consider: ~a" (op-action op))
+  (let ((state2 (achieve-all state (op-preconds op)
+                             (cons goal goal-stack))))
+    (unless (null state2)
+      (dbg-indent :gps (length goal-stack) "Action: ~a" (op-action op))
+      (append (remove-if #'(lambda (x)
+                             (member-equal x (op-del-list op)))
+                         state2)
+              (op-add-list op)))))
+#+end_src
+
+One thing to notice is the different treatment of the data. In the first, ~set-difference~ and ~union~ are used to set the state. In other words, for simplicity sake, the state was treated as an unordered list of unique items.
+
+I am not sure what problem the ordering is fixing.
+*** MANUALLY DEFINED VS. PRAGMATICALLY DEFINED OPS
+For most of the examples, Norvig uses manually-written ops. ~*school-ops*~, ~*maze-ops*~, etc.
+
+In the blocks world domain example, he programmatically defines the ops.
+#+begin_src lisp
+(defun make-block-ops (blocks)
+  (let ((ops nil))
+    (dolist (a blocks)
+      (dolist (b blocks)
+        (unless (equal a b)
+          (dolist (c blocks)
+            (unless (or (equal c a) (equal c b))
+              (push (move-op a b c) ops)))
+          (push (move-op a 'table b) ops)
+          (push (move-op a b 'table) ops))))
+    ops))
+#+end_src
+
+That's possible because the block ops need to also encode the various possible "states" of the blocks
+*** MISC
+Most of the exercises don't have answers provided, so I won't be doing them.
+
 ** Chapter 05 - ELIZA: Dialog with a Machine
+*** Pattern matching
+This chapter has a great example of using ~sublis~:
+#+begin_src lisp
+(defun extend-bindings (var val bindings)
+   "Add a (var . value) pair to a binding list. "
+   (cons (cons var val)
+         ;; Once we add a "real" binding,
+         ;; we can get rid of the dummy no-bindings
+         (if (eq bindings no-bindings)
+             nil
+             bindings)))
+
+> (sublis (pat-match ' (i need a ?X) ' (i need a vacation))
+          '(what would it mean to you if you got a ?X ?))
+
+(WHAT WOULD IT MEAN TO YOU IF YOU GOT A VACATION ?)
+#+end_src
 ** Chapter 06 - Building Software Tools
+*** DATA-DRIVEN PROGRAMMING
+#+begin_quote
+The solution to this dilemma is to write one version of `segment-pattern-p` and `segment-matcher`, once and for all, but to have these functions refer to a table of pattern/action pairs.
+The table would say "if you see `?*` in the pattern, then use the function `segment-match`," and so on.
+Then programmers who want to extend the matcher just add entries to the table, and it is trivial to merge different extensions (unless of course two programmers have chosen the same symbol to mark different actions).
+
+This style of programming, where pattern/action pairs are stored in a table, is called *data*-*driven programming*.
+It is a very flexible style that is appropriate for writing extensible systems.
+#+end_quote
+
 ** Chapter 07 - STUDENT: Solving Algebra Word Problems
 ** Chapter 08 - Symbolic Mathematics: A Simplification Program
 ** Chapter 09 - Efficiency issues
@@ -410,3 +345,5 @@ There are some specific parts of Lisp here that weren't covered in Touretzky (DE
 ** Chapter 23 - Compiling Lisp
 ** Chapter 24 - ANSI Common Lisp
 ** Chapter 25 - Troubleshooting
+* NOTES
+Although the book provides exercises, in practice they don't feel useful. Easy questions sometimes feel like trivia questions, and hard questions often don't have answers in the book. If a book has exercises with no answers, it's clear that it was supposed to be supplemented by a teacher.

@@ -17,21 +17,21 @@
 ;; You need conditionals, you need to understand DEFUN, parameter lists, APPEND, etc.
 ;; * * * * * * * * * * * *
 
-(defun sentence ()    (append (noun-phrase) (verb-phrase)))
-(defun noun-phrase () (append (Article) (Noun)))
-(defun verb-phrase () (append (Verb) (noun-phrase)))
-(defun Article ()     (one-of '(the a)))
-(defun Noun ()        (one-of '(man ball woman table)))
-(defun Verb ()        (one-of '(hit took saw liked)))
+;; (defun sentence ()    (append (noun-phrase) (verb-phrase)))
+;; (defun noun-phrase () (append (Article) (Noun)))
+;; (defun verb-phrase () (append (Verb) (noun-phrase)))
+;; (defun Article ()     (one-of '(the a)))
+;; (defun Noun ()        (one-of '(man ball woman table)))
+;; (defun Verb ()        (one-of '(hit took saw liked)))
 
 
 (defun one-of (set)
   "Pick one element of set, and make a list of it."
   (list (random-elt set)))
 
-(defun random-elt (choices)
-  "choose an element from a list at random."
-  (elt choices (random (length choices))))
+;; (defun random-elt (choices)
+;;   "choose an element from a list at random."
+;;   (elt choices (random (length choices))))
 
 (defun Adj* ()
   (if (= (random 2) 0)
@@ -194,23 +194,23 @@
 
 ;; EXERCISES
 ;; * 2.1 [m] Write a version of generate that uses cond but avoids calling rewrites twice.
-(defun generate (phrase)
-  "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.1"
-  (let ((choices (rewrites phrase)))
-    (cond ((listp phrase)
-           (mappend #'generate phrase))
-          ((null choices) (list phrase))
-          (t (generate (random-elt choices))))))
+;; (defun generate (phrase)
+;;   "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.1"
+;;   (let ((choices (rewrites phrase)))
+;;     (cond ((listp phrase)
+;;            (mappend #'generate phrase))
+;;           ((null choices) (list phrase))
+;;           (t (generate (random-elt choices))))))
 
 ;; * 2.2 [m] Write a version of generate that explicitly differentiates between terminal symbols (those with no rewrite rules) and nonterminal symbols.
-(defun generate (phrase)
-  "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.2"
-  (let* ((choices (rewrites phrase))
-         (terminal (null choices)))
-    (cond ((listp phrase)
-           (mappend #'generate phrase))
-          (terminal (list phrase))
-          (t (generate (random-elt choices))))))
+;; (defun generate (phrase)
+;;   "Generate a random sentence or phrase. ANSWER TO EXERCISE 2.2"
+;;   (let* ((choices (rewrites phrase))
+;;          (terminal (null choices)))
+;;     (cond ((listp phrase)
+;;            (mappend #'generate phrase))
+;;           (terminal (list phrase))
+;;           (t (generate (random-elt choices))))))
 ;; * TODO 2.3 [h] Write a trivial grammar for some other language. This can be a natural language other than English, or perhaps a subset of a computer language.
 (defparameter *japanese-grammar*
   '((sentence -> (noun-phrase verb-phrase))

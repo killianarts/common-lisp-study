@@ -279,6 +279,7 @@ Too much time is spent teaching what can go wrong, common mistakes made by stude
 - What do I like and not like about this?
   I dislike nearly this whole chapter. Teaching that symbols and forms can be passed around as data is probably the best aspect of it.
 
+
 ** Conditionals
 *** NOTES
 4.1. Write a function MAKE-EVEN that makes an odd number even by adding one to it. If the input to MAKE-EVEN is already even, it should be returned unchanged.
@@ -340,6 +341,7 @@ As I continue reading, the text-book nature of Gentle makes it more and more dif
   I liked the rock paper scissors exercise. I liked the explanation about how AND and OR are interchangable and how that fact can be used to simplify complex conditional forms.
 
   I didn't like the lack of WHEN and UNLESS. Nor did I like (if (numberp x) (> x y) nil). Today it's considered bad practice to do that.
+
 
 ** Variables and Side Effects
 *** FUNCTIONS COVERED
@@ -449,6 +451,7 @@ If you use strings, it is easier and feels "fair". Forcing lists feels unfair (a
 
 - What do I like and not like about this?
   I like the exercise, but I don't like some of its limitations, nor the timing or usage.
+
 
 ** List Data Structures
 *** NOTES
@@ -805,6 +808,7 @@ The Advanced section is also very useful. Tree functions, equality, :test keywor
 
 Might be a good idea to cover all functions that have a :test keyword. "All list functions that include an equality test accept a :TEST keyword argument. REMOVE is another example."
 EQL won't be able to test nested lists against a list, but EQUAL can.
+
 ** Applicative Programming
 *** FUNCTIONS COVERED
 FUNCALL, MAPCAR, FIND-IF, REMOVE-IF, REMOVE-IF-NOT, REDUCE, EVERY, FUNCTION
@@ -1304,6 +1308,7 @@ Additionally, the Advanced section explains how to work on two lists in parallel
 #+end_src
 
 Importantly, I worked through many exercises where I did work I would usually loop over with for-loops in other languages.
+
 ** Recursion
 *** FUNCTIONS COVERED
 LABELS
@@ -1441,7 +1446,6 @@ Augmenting Recursion
 #+begin_quote
 Suppose we want a function FIND-NUMBER to search a tree and return the first number that appears in it, or NIL if there are none. Then we should use NUMBERP and ATOM as our end tests and OR as the combiner.
 #+end_quote
-
 #+begin_src lisp
 (defun find-number (x)
   (cond ((numberp x) x)
@@ -1449,7 +1453,6 @@ Suppose we want a function FIND-NUMBER to search a tree and return the first num
         (t (or (find-number (car x))
                (find-number (cdr x))))))
 #+end_src
-
 If you want to use functional programming operators to do a single test on a single cons cell, then the code looks like this:
 #+begin_src lisp
 (mapcar #'(lambda (x) (cond ((numberp x) x)
@@ -1738,6 +1741,7 @@ This is essentially the thing SICP teaches at the beginning. Sussman and Ableson
 
 *** ANALYSIS
 A very good chapter that helped me get a better grip on recursion, although I still find it difficult. I struggle with recursion, so I think I need to drill this chapter.
+
 ** Input/Output
 *** FUNCTIONS COVERED
 FORMAT, ~&, ~S, ~A, READ, YES-OR-NO-P, Y-OR-N-P, STRINGP, WITH-OPEN-FILE
@@ -1910,6 +1914,7 @@ The num is called a "prefix parameter"
 
 *** ANALYSIS
 Good, brief chapter.
+
 ** Assignment
 *** FUNCTIONS COVERED
 SETF INCF DECF WHEN UNLESS
@@ -2164,7 +2169,7 @@ WHEN and UNLESS let you evaluate multiple expressions in the body and return onl
 "Assignment is used only sparingly in Lisp programs... Assignment-free programs are considered very elegant."
 
 A combination of LET, applicative operators (functional programming operators) and tail-recursion make assignment much less necessary.
-**** TODO [#C] Finish the final problem in the tic-tac-toe exercise (to create attacking strategies)
+**** TODO Finish the final problem in the tic-tac-toe exercise (to create attacking strategies)
 
 **** REVIEW EXERCISES
 ***** 10.5
@@ -2204,6 +2209,7 @@ The tic-tac-toe game is very enlightening for a few reasons.
 
 The tutorial by [[https://github.com/nmunro/cl-tutorials/blob/main/4a-tic-tac-toe/src/main.lis][Neil Munro]] uses 2d arrays for the board, and uses strings for empty, X, and O, making searching for a win condition much more tedious (see game-over-p).
 The power of mathematical thinking.
+
 
 ** Iteration and Block Structure
 *** FUNCTIONS COVERED
@@ -2404,6 +2410,7 @@ The iteration operators can seem tantilizingly familiar at first, but they have 
 The DO operator is especially tricky.
 
 I found myself often wishing to reach for recursion or functional programming operators instead, but forced myself to use the iteration constructs.
+
 ** Structures and The Type System
 *** FUNCTIONS COVERED
 TYPEP TYPE-OF
@@ -2513,7 +2520,6 @@ CLOCK: [2024-07-27 Sat 16:56]--[2024-07-27 Sat 17:01] =>  0:05
 
 (process-node 'start)
 
-
 (defun run ()
   (let ((current-node 'start))
     (do ((node current-node))
@@ -2534,6 +2540,7 @@ Make a :print-function to suppress details of structures when structures are pri
 EQUAL doesn't work on structures, even if all fields are the same. EQUALP will work, though.
 *** ANALYSIS
 Simple chapter. The exercises didn't do as much guidance. Through exercises I realized that structures need to be used in the context of list processing functions. Structures seem simple to use, similar to classes (since they can inherit from other structures). One thing I wish the author taught is the advantages and disadvantages of structures over plain lists.
+
 ** Arrays, Hash Tables, and Property Lists
 *** FUNCTIONS COVERED
 MAKE-ARRAY :INITIAL-ELEMENT :INITIAL-CONTENTS AREF MAKE-HASH-TABLE GETHASH DESCRIBE INSPECT
@@ -2701,6 +2708,7 @@ The exercises, while fairly simple, were good for demonstrating the kinds of cha
 *** ADVANCED
 **** 13.10 PROPERTY LIST CELLS
 **** 13.11 MORE ON SEQUENCES
+
 ** Macros and Compliation
 *** FUNCTIONS COVERED
 DEFMACRO, COMPILE, COMPLILE-FILE
@@ -2942,6 +2950,7 @@ DEFMACRO, COMPILE, COMPLILE-FILE
 A good end to the book. I needed to refresh my memory on structures.
 
 The keyboard exercise required considerable setup, but it actually was fairly easy to complete the exercise. It also demonstrates the power of macros without being too complicated nor too simple.
+
 * Appendix A: The SDRAW Tool
 A tool made for helping students understand cons cells.
 * Appendix B: The DTRACE Tool
