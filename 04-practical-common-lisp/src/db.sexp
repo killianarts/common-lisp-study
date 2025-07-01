@@ -1,0 +1,2 @@
+
+((:TITLE "Common Lisp: A Gentle Introduction to Symbolic Computation" :AUTHOR "David Touretzky" :DIFFICULTY 1 :REVIEW "Great book. Lots of exercises. No CLOS, limited information on data structures beyond lists." :RECOMMEND? T) (:TITLE "SICP" :AUTHOR "Sussman and Abelson" :DIFFICULTY 10 :REVIEW "Comprehensive and definitive text on computer science. Heavy on math in first three chapters and too much recursion (because of Scheme)." :RECOMMEND? T)) 

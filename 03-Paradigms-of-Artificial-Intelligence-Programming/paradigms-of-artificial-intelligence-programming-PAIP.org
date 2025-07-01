@@ -310,7 +310,7 @@ This chapter has a great example of using ~sublis~:
              nil
              bindings)))
 
-> (sublis (pat-match ' (i need a ?X) ' (i need a vacation))
+> (sublis (pat-match '(i need a ?X) '(i need a vacation))
           '(what would it mean to you if you got a ?X ?))
 
 (WHAT WOULD IT MEAN TO YOU IF YOU GOT A VACATION ?)

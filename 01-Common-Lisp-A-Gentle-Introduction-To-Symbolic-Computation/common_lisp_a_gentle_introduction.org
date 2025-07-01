@@ -2552,7 +2552,7 @@ COERCE
 ***** record-value
 ***** print-hist-line
 ***** print-histogram
-*****
+***** CODE
 #+begin_src lisp
 (defun new-histogram (num)
   (defparameter *hist-array* (make-array num))

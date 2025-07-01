@@ -1,0 +1,1196 @@
+#+title: 05 On Lisp
+#+author: Paul Graham
+
+* 01 The Extensible Language
+** Bottom-up programming
+Building DSLs and increasing your language's expressiveness in a problem domain is what Graham calls "bottom-up programming".
+
+* 02 Functions
+Understanding how to use functions is an important part "bottom-up" programming.
+** Functions can be named
+#+begin_src lisp
+(defun squirt (x) (* x x))
+#+end_src
+** They can be unnamed
+#+begin_src lisp
+(lambda (x) (* x x))
+#+end_src
+** Symbols and Functions can share the same name
+#+begin_src lisp
+(setf squirt 5)
+(squirt squirt)
+#+end_src
+** Symbols can hold functions
+#+begin_src lisp
+(setf add #'+)
+(eq (symbol-value 'add) (symbol-function '+))
+#+end_src
+** That is the essence of what ~defun~ does
+#+begin_src lisp
+(setf (symbol-function 'double) #'(lambda (x) (* x 2)))
+#+end_src
+...is equivalent to:
+#+begin_src lisp
+(defun dubdub (x) (* x 2))
+#+end_src
+** Functions can be passed as arguments
+Passing functions as data objects for use by other functions is the essence of *applicative programming*.
+#+begin_src lisp
+(apply #'+ '(1 2 3 4 5))
+(funcall #'+ 1 2 3 4 5)
+#+end_src
+** Common Lisp functions that receive functions as arguments
+#+begin_src lisp
+(mapcar #'dubdub '(1 2 3 4 5))
+(sort '(8 5 2 9 10 38 7 67) #'<)
+(remove-if-not #'(lambda (x) (>= x 10))
+ '(8 5 2 9 10 38 7 67))
+#+end_src
+** Common Lisp functions can be used like OOP methods
+#+begin_src lisp
+(defun make-noise (animal)
+  (case animal
+    (dog (print "bark")
+     (print "growl"))
+    (cat (print "meow")
+     (print "hiss"))
+    (bird (print "tweet"))))
+
+(make-noise 'cat)
+
+(defun make-noise-method (animal)
+  (funcall (get animal 'noise)))
+
+(setf (get 'cat 'noise) #'(lambda () (print "meow") (print "hiss")))
+(make-noise-method 'cat)
+#+end_src
+** Closure: Local State for Functions
+Closures are functions that save copies of variables of higher scope at the time those functions are defined.
+#+begin_src lisp
+(let ((counter 0 ))
+  (defun new-id () (incf counter))
+  (defun reset-id () (setq counter 0)))
+
+(defun make-adder (n)
+  #'(lambda (x) (+ x n)))
+
+;; Remember that symbols can contain functions
+;; Previous example:
+(setf doubler #'dubdub)
+(eq (symbol-value 'doubler) (symbol-function 'dubdub))
+
+;; Now with make-adder
+(setf add-10 (make-adder 10))
+(funcall add-10 10)
+;; Notice the syntax: you can't use #'add-10
+(mapcar add-10 '(1 2 3 4 5))
+;; Why?
+(symbol-function 'add-10)               ; => no such function named ADD-10 defined
+(symbol-value 'add-10)                  ; the function is saved in the symbol-value slot, on symbol-function slot
+;; Let's add it to the slot:
+(setf (symbol-function 'add-10) add-10)
+;; Try again:
+(mapcar #'add-10 '(1 2 3 4 5))          ; => (11 12 13 14 15)
+#+end_src
+~make-adder~ above has static state, but you can make the state changable:
+#+begin_src lisp
+(defun make-adderb (n)
+  #'(lambda (x &optional change)
+      (if change
+          (setf n x)
+          (+ x n))))
+#+end_src
+~n~ is the value that will be closed over when ~make-adderb~ returns the function. It is a /variable/ that is locally scoped and has a /place/ that can be change with ~setf~. If you set ~change~ to ~t~, then you can reset how much the /adder/ will add.
+#+begin_src lisp
+(setf add-something (make-adderb 3))     ; add-something is an adder that adds three
+(funcall add-something 3)
+
+(funcall add-something 100 t)
+(funcall add-something 100)             ; now it is an adder that adds 100
+#+end_src
+#+begin_src lisp
+(defun make-dbms (db)
+  ;; db is closed over.
+  ;; The inner functions here use assoc,
+  ;; meaning that we must pass an a-list to make-dbms
+  (list
+   ;; we call functions via their place in the list
+   ;; (first dbms)
+   ;; Provides the value of the key passed
+   #'(lambda (key)
+       (cdr (assoc key db)))
+   ;; (second dbms)
+   ;; Sets the value of the key
+   #'(lambda (key val)
+       (push (cons key val) db) key)
+   ;; (third dbms)
+   ;; Deletes the key/value dotted-list
+   #'(lambda (key)
+       (setf db (delete key db :key #'car))
+       key)))
+
+(setf games (make-dbms '((nintendo . zelda) (valve . half-life))))
+(funcall (first games) 'nintendo)
+(funcall (second games) 'ea 'sports-game)
+(funcall (first games) 'ea)
+(funcall (third games) 'ea)
+#+end_src
+Closures bind variables that are similar to private variables in classes of other object-oriented programming languages. Unless there is a "getter" defined for the value, you can't access the value of the variable saved in the closure.
+
+If you make a db like this, then it makes sense to define "methods" for accessing the different functions.
+#+begin_src lisp
+(defun make-dbms (db)
+  ;; db is closed over.
+  ;; The inner functions here use assoc,
+  ;; meaning that we must pass an a-list to make-dbms
+  (list
+   ;; we call functions via their place in the list
+   ;; (first dbms)
+   ;; Provides the value of the key passed
+   #'(lambda (key)
+       (cdr (assoc key db)))
+   ;; (second dbms)
+   ;; Sets the value of the key
+   #'(lambda (key val)
+       (push (cons key val) db) key)
+   ;; (third dbms)
+   ;; Deletes the key/value dotted-list
+   #'(lambda (key)
+       (setf db (delete key db :key #'car))
+       key)
+   ;; (fourth dbms)
+   ;; Return the db
+   #'(lambda ()
+       db)))
+(setf games (make-dbms '((nintendo . zelda) (valve . half-life))))
+
+(defun lookup (key db)
+  (funcall (first db) key))
+(lookup 'nintendo games)
+
+(funcall (fourth games))
+#+end_src
+** Tail-recursive functions are fast
+Recall from SICP that /recursive functions/ that use an /iterative/ process are faster.
+#+begin_src lisp
+(defun triangle (n)
+  (labels ((_triangle (count n)
+             (declare (type fixnum n count))
+             (if (zerop n)
+                 count
+                 (_triangle (the fixnum (+ n count))
+                            (the fixnum (- n 1))))))
+    (_triangle 0 n)))
+
+(time (triangle 1000000000))
+#+end_src
+#+begin_src lisp
+(defun triangle (n)
+  (labels ((_triangle (count n)
+             (if (zerop n)
+                 count
+                 (_triangle (+ n count)
+                            (- n 1)))))
+    (_triangle 0 n)))
+
+(time (triangle 1000000000))
+#+end_src
+
+* 03 Functional Programming
+** DESTRUCTIVE FUNCTIONS
+Common Lisp is actually largely intended to be used in a functional style. There are destructive functions, but the way they work can be surprising.
+*** ~reverse~ vs ~nreverse~
+~reverse~ returns a value, ~nreverse~ does too. Just because it has side-effects, doesn't mean you can run the function and have the data changed.
+#+begin_src lisp
+(defparameter list1 '(1 2 3))
+(reverse list1) ; => (3 2 1)
+(setf list1 (reverse list1)) ; => (3 2 1)
+#+end_src
+Everything looks good, no surprises. Now, what about ~nreverse~?
+#+begin_src lisp
+(nreverse list1) ; => (3 2 1)
+list1 ; => (3)
+#+end_src
+Surprised? You need to ~setf~ list1 to the result of ~nreverse~.
+#+begin_src lisp
+(setf list1 '(1 2 3))
+(setf list1 (nreverse list1))
+
+(multiple-value-bind
+      (quotient fractional) (floor (/ 7 2))
+  fractional)
+#+end_src
+#+begin_src python
+d = {"the key": "the value", "another key": "another value"}
+keys = [k for k,v in d.items()]
+return keys # => ["the key", "another key"]
+#+end_src
+*** WHO OWNS ARGUMENTS AND RETURN VALUES?
+#+begin_quote
+The convention in Lisp seems to be that an invocation owns objects it receives as return values, but not objects passed
+to it as arguments. Functions that modify their arguments are distinguished by the label “destructive,” but there is no special name for functions that modify objects returned to them.
+#+end_quote
+#+begin_src lisp
+(defun ok (x)
+  (nconc (list 'a x) (list 'g)))
+(defparameter bcd '(b c d e f))
+(ok bcd) ; => (A (B C D E F) C)
+bcd ; => (B C D E F), bcd remains unmodified even though nconc was called on it
+
+(defun not-ok (x)
+  (nconc (list 'a) x (list 'g)))
+(not-ok bcd)
+ ; => (A B C D E F G)
+bcd ; => (B C D E F G), bcd has been modified.
+#+end_src
+In ~ok~, ~nconc~ creates a new list that includes the value of ~x~ in it--in this case, ~bcd~. In ~not-ok~, ~bcd~ is modified because it's value isn't placed into a new list.
+
+* 04 Utility Functions
+#+begin_quote
+To be good at bottom-up programming is to feel equally uncomfortable when the missing operator is one which hasn’t been written yet. You must be able to say “what you really want is x,” and at the same time, to know what x should be.
+#+end_quote
+To be good at bottom-up programming, you need to know Lisp and understand your problem domain and how Lisp needs to be enhanced to address the problem.
+
+To get started at bottom-up programming, you should just pick a data-structure to use, design utilities for manipulating that structure using the language of the domain, and then continuously build up the layers of abstraction necessary to complete the task at hand.
+** ~find2~
+#+begin_src lisp
+(defun find2 (fn lst)
+  "Combination of FIND-IF and SOME.
+Calls a predicate on a list of objects.
+Returns the first item which matches against that
+predicate, and T. Otherwise, returns two nils"
+  (if (null lst)
+      nil
+      (let ((val (funcall fn (car lst))))
+        (if val
+            (values (car lst) val)
+            (find2 fn (cdr lst))))))
+
+(some #'evenp '(1 2 3 4 5 6))
+ ; => T
+(find-if #'evenp '(1 2 3 4 5 6))
+ ; => 2
+(find2 #'evenp '(1 2 3 4 5 6))
+ ; => 2, T
+#+end_src
+** ~last1~, ~single~, ~append1~, ~conc1~, ~mklist~
+#+begin_src lisp
+(proclaim '(inline last1 single append1 conc1 mklist))
+(defun last1 (lst)
+  (car (last lst)))
+(defun single (lst)
+  (and (consp lst) (not (cdr lst))))
+(defun append1 (lst obj)
+  (append lst (list obj)))
+(defun conc1 (lst obj)
+  (nconc lst (list obj)))
+(defun mklist (obj)
+  (if (listp obj) obj (list obj)))
+#+end_src
+** ~longer~, ~filter~, ~group~
+#+begin_src lisp
+(defun longer (x y)
+  (labels ((compare (x y)
+             (and (consp x)
+                  (or (null y)
+                      (compare (cdr x) (cdr y))))))
+    (if (and (listp x) (listp y))
+        (compare x y)
+        (> (length x) (length y)))))
+
+,#+nil
+(longer '(1 2 3 4) '(1 2 3 4 5 6 7))
+                                        ; => NIL
+
+,#+nil
+(longer '(1 2 3 4 5 6 7 8) '(1 2 3))
+                                        ; => T
+
+(defun filter (fn lst)
+  (let ((acc nil))
+    (dolist (x lst)
+      (let ((val (funcall fn x)))
+        (if val (push val acc))))
+    (nreverse acc)))
+
+,#+nil
+(filter #'evenp '(1 2 3 4 5 6 7 8 9 10))
+                                        ; => (T T T T T)
+,#+nil
+(remove-if-not #'evenp '(1 2 3 4 5 6 7 8 9 10))
+                                        ; => (2 4 6 8 10)
+,#+nil
+(some #'evenp '(1 2 3 4 5 6 7 8 9 10))
+                                        ; => T
+,#+nil
+(filter
+ #'(lambda (s)
+     (when (stringp s)
+       (string-upcase s)))
+ '("hello" "goodbye" 1 2 3 4 "How are you doing?" 'not 'a 'string "My name is Micah"))
+                                        ; => ("HELLO" "GOODBYE" "HOW ARE YOU DOING?" "MY NAME IS MICAH")
+
+,#+nil
+(mapcar
+ #'(lambda (s)
+     (when (stringp s)
+       (string-upcase s)))
+ '("hello" "goodbye" 1 2 3 4 "How are you doing?" 'not 'a 'string "My name is Micah"))
+                                        ; => ("HELLO" "GOODBYE" NIL NIL NIL NIL "HOW ARE YOU DOING?" NIL NIL NIL
+                                        ; "MY NAME IS MICAH")
+
+,#+nil
+(mapcar #'string-upcase
+        (remove-if-not #'stringp
+                       '("hello" "goodbye" 1 2 3 4 "How are you doing?" 'not 'a 'string "My name is Micah")))
+                                        ; => ("HELLO" "GOODBYE" "HOW ARE YOU DOING?" "MY NAME IS MICAH")
+
+(defun group (source n)
+  (if (zerop n) (error "zero length"))
+  (labels ((rec (source acc)
+             (let ((rest (nthcdr n source)))
+               (if (consp rest)
+                   (rec rest (cons (subseq source 0 n) acc))
+                   (nreverse (cons source acc))))))
+    (if source (rec source nil) nil)))
+
+(defvar nums '(1 2 3 4 5 6 7 8 9))
+
+,#+nil
+(group nums 4)
+                                        ; => ((1 2 3 4) (5 6 7 8) (9))
+#+end_src
+** ~flatten~, ~prune~
+#+begin_src lisp
+(defun flatten (x)
+  (labels ((rec (x acc)
+             (cond ((null x) acc)
+                   ((atom x) (cons x acc))
+                   (t (rec (car x) (rec (cdr x) acc))))))
+    (rec x nil)))
+
+,#+nil
+(flatten '(a (b c (d e f) g (h i (j)) k l (m)))) ; => (A B C D E F G H I J K L M)
+
+(defun prune (test tree)
+  (labels ((rec (tree acc)
+             (cond ((null tree) (nreverse acc))
+                   ((consp (car tree))
+                    (rec (cdr tree)
+                         (cons (rec (car tree) nil) acc)))
+                   (t (rec (cdr tree)
+                           (if (funcall test (car tree))
+                               acc
+                               (cons (car tree) acc)))))))
+    (rec tree nil)))
+
+,#+nil
+(prune #'evenp '(1 (2 3 (4 5 6 7 8 (9)) 10 11 (12 13 14 15 16)) 17 18 (19 20 21 22 23 (24 25 26))))
+                                        ; => (1 (3 (5 7 (9)) 11 (13 15)) 17 (19 21 23 (25)))
+#+end_src
+** ~find2~, ~before~, ~after~, ~duplicate~, ~split-if~
+#+begin_src lisp
+(defun find2 (fn lst)
+  (if (null lst)
+      nil
+      (let ((val (funcall fn (car lst))))
+        (if val
+            (values (car lst) val)
+            (find2 fn (cdr lst))))))
+
+,#+nil
+(find2 #'evenp nums)
+
+(defun before (x y lst &key (test #'eql))
+  (and lst
+       (let ((first (car lst)))
+         (cond ((funcall test y first) nil)
+               ((funcall test x first) lst)
+               (t (before x y (cdr lst) :test test))))))
+,#+nil
+(before 6 9 nums)
+
+(defun after (x y lst &key (test #'eql))
+  (let ((rest (before y x lst :test test)))
+    (and rest (member x rest :test test))))
+
+,#+nil
+(after 6 9 nums)
+
+(defun duplicate (obj lst &key (test #'eql))
+  (member obj (cdr (member obj lst :test test))
+          :test test))
+
+,#+nil
+(duplicate 3 nums)
+
+(defparameter dup-nums '(1 1 1 1 2 2 2 2 3 3 4 4 5 6 7 8 9 9 9 10 10 10 10 11 11))
+
+,#+nil
+(duplicate 1 dup-nums)
+                                        ; => (1 1 1 2 2 2 2 3 3 4 4 5 6 7 8 9 9 9 10 10 10 10 11 11)
+,#+nil
+(duplicate 5 dup-nums)
+                                        ; => NIL
+
+(defun split-if (fn lst)
+  (let ((acc nil))
+    (do ((src lst (cdr src)))
+        ((or (null src) (funcall fn (car src)))
+         (values (nreverse acc) src))
+      (push (car src) acc))))
+
+,#+nil
+(split-if #'evenp dup-nums)
+,#+nil
+(split-if #'(lambda (x) (> x 8)) dup-nums)
+#+end_src
+** ~most~ ~best~ ~mostn~
+#+begin_src lisp
+(defun most (fn lst)
+  (if (null lst)
+      (values nil nil)
+      (let* ((wins (car lst))
+             (max (funcall fn wins)))
+        (dolist (obj (cdr lst))
+          (let ((score (funcall fn obj)))
+            (when (> score max)
+              (setq wins obj
+                    max score))))
+        (values wins max))))
+(defparameter lists '((a) (a b c) (d e f g) (h i) (j k) (l m n o) (p q r s)))
+
+,#+nil
+(most #'length lists)
+                                        ; => (D E F G), 4
+
+(defun best (fn lst)
+  (if (null lst)
+      nil
+      (let ((wins (car lst)))
+        (dolist (obj (cdr lst))
+          (if (funcall fn obj wins)
+              (setq wins obj)))
+        wins)))
+
+,#+nil
+(best #'> dup-nums)
+                                        ; => 11 (4 bits, #xB, #o13, #b1011)
+
+(defun mostn (fn lst)
+  (if (null lst)
+      (values nil nil)
+      (let ((result (list (car lst)))
+            (max (funcall fn (car lst))))
+        (dolist (obj (cdr lst))
+          (let ((score (funcall fn obj)))
+            (cond ((> score max)
+                   (setq max score
+                         result (list obj)))
+                  ((= score max)
+                   (push obj result)))))
+        (values (nreverse result) max))))
+
+,#+nil
+(mostn #'length lists)
+                                        ; => ((D E F G) (L M N O) (P Q R S)), 4
+#+end_src
+** Mapping functions
+#+begin_src lisp
+(defun map0-n (fn n)
+  (mapa-b fn 0 n))
+
+(map0-n #'1+ 5)
+                                        ; => (1 2 3 4 5 6)
+
+(defun map1-n (fn n)
+  (mapa-b fn 1 n))
+
+(map1-n #'identity 5)
+                                        ; => (1 2 3 4 5)
+
+(defun mapa-b (fn a b &optional (step 1))
+  (do ((i a (+ i step))
+       (result nil))
+      ((> i b) (nreverse result))
+    (push (funcall fn i) result)))
+
+(mapa-b #'identity 5 10)
+
+(defun map-> (fn start test-fn succ-fn)
+  (do ((i start (funcall succ-fn i))
+       (result nil))
+      ((funcall test-fn i) (nreverse result))
+    (push (funcall fn i) result)))
+
+(map-> #'identity 1 #'(lambda (x) (> x 5)) #'(lambda (x) (+ x 1)))
+
+(defun mappend (fn &rest lsts)
+  (apply #'append (apply #'mapcar fn lsts)))
+
+(mappend #'(lambda (x) (list (length x))) lists)
+
+(defun mapcars (fn &rest lsts)
+  (let ((result nil))
+    (dolist (lst lsts)
+      (dolist (obj lst)
+        (push (funcall fn obj) result)))
+    (nreverse result)))
+
+(mapcars #'sqrt nums dup-nums)
+
+(defun rmapcar (fn &rest args)
+  (if (some #'atom args)
+      (apply fn args)
+      (apply #'mapcar
+             #'(lambda (&rest args)
+                 (apply #'rmapcar fn args))
+             args)))
+#+end_src
+* 05 Returning Functions
+#+begin_src lisp
+(remove-if (complement #'evenp) nums)
+#+end_src
+
+#+begin_src lisp
+(defun fif (if then &optional else)
+  #'(lambda (x)
+      (if (funcall if x)
+          (funcall then x)
+          (if else (funcall else x)))))
+
+(defun fint (fn &rest fns)
+  (if (null fns)
+      fn
+      (let ((chain (apply #'fint fns)))
+        #'(lambda (x)
+            (and (funcall fn x) (funcall chain x))))))
+
+(defun more-than-5 (x) (> x 5))
+(defun less-than-100 (x) (< x 100))
+(defun between (x y z) (< y x z))
+(defun between-5-10 (x) (between x 5 10))
+(defparameter many-nums (map1-n #'identity 1000))
+(defun maponly (pred-fn map-fn source)
+  (funcall #'remove-if-not pred-fn
+           (funcall #'mapcar map-fn source)))
+(defun cube (x) (* x x x))
+(maponly #'numberp (fif #'between-5-10 #'cube) many-nums)
+#+end_src
+** Building cdring-down recursive functions
+#+begin_src lisp
+(defun ttrav (rec &optional (base #'identity))
+  (labels ((self (tree)
+             (if (atom tree)
+                 (if (functionp base)
+                     (funcall base tree)
+                     base)
+                 (funcall rec (self (car tree))
+                          (if (cdr tree)
+                              (self (cdr tree)))))))
+    #'self))
+
+(funcall (ttrav #'(lambda (l r) (+ l (or r 0))) 1) many-nums)
+
+(defun multiply-by (x) (lambda (y) (+ x y)))
+(mapcar #.(multiply-by 3) nums)
+#+end_src
+
+* 06 Functions as Representation
+** TWENTY-QUESTIONS
+*** TRADITIONAL APPROACH
+#+begin_src lisp
+(defstruct node contents yes no)
+(defvar *nodes* (make-hash-table))
+(defun defnode (name conts &optional yes no)
+  (setf (gethash name *nodes*)
+        (make-node :contents conts
+                   :yes yes
+                   :no no)))
+
+(defnode 'people "Is the person a man?" 'male 'female)
+(defnode 'male "Is he living?" 'liveman 'deadman)
+(defnode 'deadman "Was he American?" 'us 'them)
+(defnode 'us "Is he on a coin?" 'coin 'cidence)
+(defnode 'coin "Is the coin a penny?" 'penny 'coins)
+(defnode 'penny 'lincoln)
+
+(defun run-node (name)
+  (let ((n (gethash name *nodes*)))
+    (cond ((node-yes n)
+           (format t "~A~%>> " (node-contents n))
+           (case (read)
+             (yes (run-node (node-yes n)))
+             (t (run-node (node-no n)))))
+          (t (node-contents n)))))
+#+end_src
+*** USING CLOSURES
+#+begin_src lisp
+(defvar *nodes* (make-hash-table))
+(defun defnode (name conts &optional yes no)
+  (setf (gethash name *nodes*)
+        (if yes
+            #'(lambda ()
+                (format t "~A~%>> " conts)
+                (case (read)
+                  (yes (funcall (gethash yes *nodes*)))
+                  (t (funcall (gethash no *nodes*)))))
+            #'(lambda () conts))))
+
+(defnode 'people "Is the person a man?" 'male 'female)
+(defnode 'male "Is he living?" 'liveman 'deadman)
+(defnode 'deadman "Was he American?" 'us 'them)
+(defnode 'us "Is he on a coin?" 'coin 'cidence)
+(defnode 'coin "Is the coin a penny?" 'penny 'coins)
+(defnode 'penny 'lincoln)
+
+#+end_src
+*** USING A DISPOSABLE LIST
+#+begin_src lisp
+(defvar *nodes* nil)
+
+(defun defnode (&rest args)
+  (push args *nodes*)
+  args)
+
+(defun compile-net (root)
+  (let ((node (assoc root *nodes*)))
+    (if (null node)
+        nil
+        (let ((conts (second node))
+              (yes (third node))
+              (no (fourth node)))
+          (if yes
+              (let ((yes-fn (compile-net yes))
+                    (no-fn (compile-net no)))
+                #'(lambda ()
+                    (format t "~A~%>> " conts)
+                    (funcall (if (eq (read) 'yes)
+                                 yes-fn
+                                 no-fn))))
+              #'(lambda () conts))))))
+#+end_src
+
+* 07 Macros
+** BACKQUOTES
+Backquote is a special version of quote which can be used to create templates for Lisp expressions.
+** COMMA IN BACKQUOTES
+A comma within a macro will "turn off" the quoting of the form, allowing the expression after the comma to be evaluated.
+** COMMA AT-SIGN IN BACKQUOTES
+A comma at-sign (,@) in backquotes will do the same thing as the comma, except the results will be /spliced/ in, removing the first layer of parentheses around the expression.
+
+You can't do something like ~`,@form~. Use ~`(progn ,@form)~ or something similar instead.
+
+You can't splice atoms into a list--unless the atom is in the ~last~ position of the list.
+** HOW TO BUILD A MACRO
+*** WISHFUL THINKING
+Write the call you want to make with the macro.
+#+begin_src lisp
+(defroute index (GET "/") (request)
+  ...)
+#+end_src
+*** WRITE THE DESIRED EXPANSION
+*** CONSTRUCT MACRO PARAMETER LIST FROM CALL
+#+begin_quote
+Now go back to the two expressions you wrote down. For each argument in the
+macro call, draw a line connecting it with the place it appears in the expansion
+below. In Figure 7.2 there are two parallel lines. To write the body of the macro,
+turn your attention to the expansion. Start the body with a backquote. Now, begin
+reading the expansion expression by expression. Wherever you find a parenthesis
+that isn’t part of an argument in the macro call, put one in the macro definition.
+So following the backquote will be a left parenthesis. For each expression in the
+expansion
+1. If there is no line connecting it with the macro call, then write down the
+expression itself.
+2. If there is a connection to one of the arguments in the macro call, write
+down the symbol which occurs in the corresponding position in the macro
+parameter list, preceded by a comma.
+
+[When writing macros with an indefinite number of arguments,] build the parameter list of the macro, but where you want to take an indefinite number of arguments conclude with an &rest or &body parameter.
+
+3. If there is a connection from a series of expressions in the expansion to a
+series of the arguments in the macro call, write down the corresponding
+&rest or &body parameter, preceded by a comma-at.
+#+end_quote
+** MACROEXPANSION
+Expanding built-in macros is a good way of learning how to build macros.
+** MACRO BUILDING MINDSET
+#+begin_quote
+The more general approach to writing macros is to think about the sort of
+expression you want to be able to use, what you want it to expand into, and then
+write the program that will transform the first form into the second.
+#+end_quote
+Think of building macros as writing a program.
+** STYLE
+There are two kinds of code associated with macro definitions: expander code and expansion code
+*** EXPANDER CODE
+Favor clarity over efficiency.
+
+Usually can be written the way the first version of a program is written.
+
+*** EXPANSION CODE
+Favor efficiency over clarity.
+**** ~GO~ IS OKAY
+**** ~SETQ~ IS OKAY
+**** AVOID CONSING
+** RULES
+*** DEFINE MACROS BEFORE CODE THAT CALLS THEM
+*** RECOMPILE CODE THAT USES MACROS AFTER REDEFINING THE MACRO
+* 08 When to Use Macros
+Macros can do two things functions can't:
+- Control the evaluation of arguments into the macro call. Functions are only called /after/ the arguments have already been evaluated.
+- Expand into the calling context.
+** PURPOSES FOR CONTROLLING EVALUATION OF ARGUMENTS
+*** 1. TRANSFORMATION
+#+begin_src lisp
+(setf nums '(1 2 3 4 5))
+;; macro-expansion
+;; (setq nums '(1 2 3 4 5))
+
+(setf (car nums) 1)
+;; macro-expansion
+;; (sb-kernel:%rplaca nums 1)
+#+end_src
+In order to know whether to use ~setq~ or ~rplaca~, ~setf~ needs to see that the first argument to it begins with ~car~.
+
+Only possible with a macro.
+
+*** 2. BINDING
+Some expressions don't want to evaluate symbols--they want to treat the symbol itself as a value.
+#+begin_src lisp
+(setq x 1)
+#+end_src
+~setq~ doesn't evaluate ~x~, it treats ~x~ as a value. ~let~ does the same thing.
+#+begin_src lisp
+(my-setf x 5)
+#+end_src
+Since ~my-setf~ needs to use ~x~ as a value without evaluating it, ~my-setf~ needs to be written as a macro.
+
+*** 3. CONDITIONAL EVALUATION
+Functions evaluate all of their inner expressions first before running. If you want to control whether an inner expression is evaluated or not, you need a macro.
+
+*** 4. MULTIPLE EVALUATION
+Arguments to functions are evaluated /only once/. Some constructs, like ~do~, need to evaluate some of their arguments more than once. You need a macro to do that.
+
+*** 5. USING THE CALLING ENVIRONMENT
+#+begin_src lisp
+(defmacro add (x)
+  `(+ ,x y))
+#+end_src
+The value returned by ~add~ is dependent on the value of the symbol ~y~ /at the point ~add~ is called/.
+
+Just as in functional programming, communicating to a function through its environment is viewed negatively. Instead, you should prefer to communicate with a macro (as with a function) via its parameters.
+
+*** 6. WRAPPING A NEW ENVIRONMENT
+
+*** 7. SAVING FUNCTION CALLS
+
+*** PROBLEMS
+Unintentional use of 5 and 6 cause the problem of "variable capture", which is probably the worst thing a macro write has to fear.
+
+** FUNCTIONS VS. MACROS
+*** PROS FOR MACROS
+- Computation at compile time.
+- Integration with Lisp. Mostly for DSLs.
+- Saving function calls.
+*** CONS AGAINST MACROS
+- Functions are data. Macros can't be used as data (to ~apply~, ~funcall~, ~mapcar~, etc.)
+- Macros can be harder to read.
+- Macros can be harder to debug.
+- Recursion is harder in macros.
+
+I'll also add: creating complex new syntax with macros (as in a DSL) also requires more time to learn for new users, compared to functions which everybody learns.
+
+
+
+* 09 Variable Capture
+** RULE FOR DETECTING VARIABLE CAPTURE
+#+begin_quote
+A symbol is capturable in some macro expansion if (a) it occurs
+free in the skeleton of the macro expansion, or (b) it is bound by a part of
+the skeleton in which arguments passed to the macro are either bound or
+evaluated.
+#+end_quote
+** EXAMPLES
+#+begin_src lisp
+(defvar x "this is the variable possibly captured")
+#+end_src
+*** CAP1
+#+begin_src lisp
+(defmacro cap1 ()
+  '(+ x 1))
+#+end_src
+**** WHY IS IT CAPTURED?
+~x~ is a free variable.
+
+~defmacro~ isn't going to return ~'(+ x 1)~, it's going to return ~(+ x 1)~.
+#+begin_src lisp
+(cap1) ; => (+ x 1), not '(+ x 1)
+#+end_src
+*** CAP2
+#+begin_src lisp
+(defmacro cap2 (var)
+  `(let ((x 1)
+         (,var 0))
+     (values x ,var)))
+
+
+;; expect => 1, 1
+;; result => 1, 0
+;; var has been captured
+(let ((y 1))
+  (cap2 y))
+
+;; macroexpansion
+(let ((y 1))
+  (let ((x 1) (y 0))
+    (values x y)))
+
+;; expect => 1, 7
+;; result => error (var x occurs more than once in the let)
+(let ((x 7))
+  (cap2 x))
+
+;; macroexpansion
+(let ((x 7))
+  (let ((x 1) (x 0))
+    (values x x)))
+#+end_src
+**** WHY IS IT CAPTURED?
+~x~ and ~var~ are bound in the same ~let~ expression.
+
+*** CAP3 & CAP4
+#+begin_src lisp
+(defmacro cap3 (var)
+  `(let ((x 0))
+     (let ((,var 7))
+       (values x ,var))))
+
+;; expect => 0, 9
+;; result => 0, 7
+(let ((y 9))
+  (cap3 y))
+
+;; macroexpansion
+(let ((y 9))
+  (let ((x 0))
+    (let ((y 7))
+      (values x y))))
+
+;; expect => 0, 20
+;; result => 7, 7
+(let ((x 20))
+  (cap3 x))
+
+;; macroexpansion
+(let ((x 20))
+  (let ((x 0))
+    (let ((x 7))
+      (values x x))))
+
+;; expected => 0, 7
+;; result => 7, 7
+(cap3 x)
+
+;; macroexpansion
+(let ((x 0))
+  (let ((x 7))
+    (values x x)))
+#+end_src
+**** WHY IS IT CAPTURED?
+Same as ~cap2~: the argument ~var~ and ~x~ are both bound in the same expression.
+
+*** SAFE1
+#+begin_src lisp
+(defmacro safe1 (var)
+  `(progn (let ((x 1))
+            (print x))
+          (let ((,var 7))
+            (print ,var))))
+
+;; => 1 and 7 printed, 7 returned
+;; safe
+(safe1 x)
+
+(let ((x 69))
+  (safe1 x))
+;; => same
+
+(let ((y 39))
+  (safe1 y))
+;; => same
+#+end_src
+*** CAP5
+#+begin_src lisp
+(defmacro cap5 (&body body)
+  `(let ((x 99))
+     (+ x ,@body)))
+
+;; expect => error (free variable x is a string)
+;; result => 198
+(cap5 x)
+
+;; macroexpansion
+(let ((x 99))
+  (+ x x))
+#+end_src
+**** WHY IS IT CAPTURED?
+Argument ~body~ is evaluated within the binding established by the skeleton.
+#+begin_src lisp
+;; skeleton
+(let ((x   ))
+  (+ x     ))
+
+(defmacro cap5 (&body body)
+  ;; binding for x established
+  (let ((x   ))
+    (+ x     )))
+
+(defmacro cap5 (&body body)
+  (let ((x 5))
+    ;; body evaluated inside the skeleton expression
+    ;; establishing the binding of x
+    (+ x ,@body)))
+#+end_src
+*** SAFE2
+#+begin_src lisp
+(defmacro safe2 (expr)
+  `(let ((x ,expr))
+     (cons x 1)))
+
+;; we expect lexical variable x to be bound to the value of free variable x
+(safe2 x)
+                                        ; => ("this is the variable possibly captured" . 1)
+
+(let ((y 5))
+  (safe2 y))
+                                        ; => (5 . 1)
+#+end_src
+**** WHY IS IT SAFE?
+The skeleton ~x~ will be bound to the value free variable ~x~.
+
+*** SAFE3
+#+begin_src lisp
+(defmacro safe3 (var &body body)
+  `(let ((,var 5))
+     (values ,var ,@body)))
+
+;; assuming the users believes x is going to be bound to some value
+(safe3 x '(hello world))
+#+end_src
+*** FOR
+#+begin_src lisp
+(defmacro for ((var start stop) &body body)
+  `(do ((,var ,start (1+ ,var))
+        (limit ,stop))
+       ((> ,var limit))
+     ,@body))
+#+end_src
+This macro is vulnerable to two captures. What are they?
+
+Let's look at the skeleton
+#+begin_src lisp
+(do ((         (1+      ))
+     (limit      ))
+    ((>      limit))
+        )
+#+end_src
+#+begin_src lisp
+(defmacro for ((var start stop) &body body)
+  `(do ((,var ,start (1+ ,var))
+        (limit ,stop))
+       ((> ,var limit))
+     ,@body))
+
+;; expect => cool dude printed 5 times
+;; result => infinite loop
+(let ((limit 5))
+  (for (limit 1 5)
+    (print "cool dude")))
+
+;; macroexpansion
+(let ((limit 5))
+  (do ((limit 1 (1+ limit))
+       (limit 5))
+      ((> limit limit))
+    (print "cool dude")))
+
+;; expect => "this is the limit" printed 10 times
+;; result => 10 printed 10 times
+(let ((limit "this is the limit"))
+  (for (x 1 10)
+    (print limit)))
+
+;; macroexpansion
+(let ((limit "this is the limit"))
+  (do ((x 1 (1+ x))
+       (limit 10))
+      ((> x limit))
+    (print limit)))
+
+
+;; infinite loop
+(let ((limit 0))
+  (for (i 0 5)
+    (incf limit))
+  limit)
+#+end_src
+** HOW TO AVOID CAPTURE
+*** BETTER NAMES
+Use the convention ~*global-var-name*~ for global variables
+
+*** PRIOR EVALUATION
+#+begin_src lisp
+;; bad
+(defmacro before (x y seq)
+  `(let ((seq ,seq))
+     (< (position ,x seq)
+        (position ,y seq))))
+
+;; A correct version:
+(defmacro before (x y seq)
+  `(let ((xval ,x)
+         (yval ,y)
+         (seq ,seq))
+     (< (position xval seq)
+        (position yval seq))))
+#+end_src
+This only works when
+1. all arguments at risk of capture are evaluated exactly once, and
+2. none of the arguments need to be evaluated in the scope of bindings established by the macro skeleton.
+
+Very strict conditions.
+#+begin_src lisp
+(defmacro for ((var start stop) &body body)
+  `(do ((,var ,start (1+ ,var))
+        (limit ,stop))
+       ((> ,var limit))
+     ,@body))
+
+(defmacro for ((var start stop) &body body)
+  `(do ((b #'(lambda (,var) ,@body))
+        (count ,start (1+ count))
+        (limit ,stop))
+       ((> count limit))
+     (funcall b count)))
+#+end_src
+*** ~GENSYMS~
+#+begin_src lisp
+(defmacro for ((var start stop) &body body)
+  `(do ((,var ,start (1+ ,var))
+        (limit ,stop))
+       ((> ,var limit))
+     ,@body))
+
+(defmacro for ((var start stop) &body body)
+  (let ((gstop (gensym)))
+    `(do ((,var ,start (1+ ,var))
+          (,gstop ,stop))
+         ((> ,var ,gstop))
+       ,@body)))
+#+end_src
+*** PACKAGES
+** FUNCTION AND BLOCK CAPTURE
+Variable capture isn't the only danger. Function capture and block capture a problem, too.
+
+* 10 Other Macro Pitfalls
+Unless they are clearly intended for iteration, macros should ensure that expressions are evaluated exactly as many times as they appear in the macro call.
+
+Macros should usually ensure that expressions are evaluated in the same order that they appear in the macro call.
+
+Lisp expects code which generates macro expansions to be purely function.
+- No mutation
+- Macros should return values, no side-effects
+
+You shouldn't destructively modify &rest parameters. They may share structure with lists elsewhere in the code.
+
+
+* 11 Classic Macros
+#+begin_src lisp
+(defmacro return-as-quoted (sym)
+  `',sym)
+#+end_src
+#+begin_src lisp
+(defmacro in (obj &rest choices)
+  (let ((insym (gensym)))
+    `(let ((,insym ,obj))
+       (or ,@(mapcar #'(lambda (c) `(eql ,insym ,c))
+                     choices)))))
+(defmacro inq (obj &rest args)
+  `(in ,obj ,@(mapcar #'(lambda (a)
+                          `',a)
+                      args)))
+(defmacro in-if (fn &rest choices)
+  (let ((fnsym (gensym)))
+    `(let ((,fnsym ,fn))
+       (or ,@(mapcar #'(lambda (c)
+                         `(funcall ,fnsym ,c))
+                     choices)))))
+(defmacro >case (expr &rest clauses)
+  (let ((g (gensym)))
+    `(let ((,g ,expr))
+       (cond ,@(mapcar #'(lambda (cl) (>casex g cl))
+                       clauses)))))
+(defun >casex (g cl)
+  (let ((key (car cl)) (rest (cdr cl)))
+    (cond ((consp key) `((in ,g ,@key) ,@rest))
+          ((inq key t otherwise) `(t ,@rest))
+          (t (error "bad >case clause")))))
+
+(defmacro with-gensyms (syms &body body)
+  `(let ,(mapcar #'(lambda (s)
+                     `(,s (gensym)))
+          syms)
+     ,@body))
+
+
+(defmacro do-tuples/o (parms source &body body)
+  (if parms
+      (let ((src (gensym)))
+        `(prog ((,src ,source))
+            (mapc #'(lambda ,parms ,@body)
+                  ,@(map0-n #'(lambda (n)
+                                `(nthcdr ,n ,src))
+                            (1- (length parms))))))))
+(defmacro do-tuples/c (parms source &body body)
+  (if parms
+      (with-gensyms (src rest bodfn)
+        (let ((len (length parms)))
+          `(let ((,src ,source))
+             (when (nthcdr ,(1- len) ,src)
+               (labels ((,bodfn ,parms ,@body))
+                 (do ((,rest ,src (cdr ,rest)))
+                     ((not (nthcdr ,(1- len) ,rest))
+                      ,@(mapcar #'(lambda (args)
+                                    `(,bodfn ,@args))
+                                (dt-args len rest src))
+                      nil)
+                   (,bodfn ,@(map1-n #'(lambda (n)
+                                         `(nth ,(1- n)
+                                           ,rest))
+                                     len))))))))))
+(defun dt-args (len rest src)
+  (map0-n #'(lambda (m)
+              (map1-n #'(lambda (n)
+                          (let ((x (+ m n)))
+                            (if (>= x len)
+                                `(nth ,(- x len) ,src)
+                                `(nth ,(1- x) ,rest))))
+                      len))
+          (- len 2)))
+#+end_src
+
+* 12 Generalized Variables
+* 13 Computation at Compile-Time
+* 14 Anaphoric Macros
+* 15 Macros Returning Functions
+* 16 Macro-Defining Macros
+* 17 Read Macros
+* 18 Destructuring
+* 19 A Query Compiler
+* 20 Continuations
+* 21 Multiple Processes
+* 22 Nondeterminism
+* 23 Parsing with ATNs
+* 24 Prolog
+* 25 Object-Oriented Lisp

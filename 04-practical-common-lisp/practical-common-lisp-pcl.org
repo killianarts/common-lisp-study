@@ -1,0 +1,34 @@
+#+title: Practical Common Lisp Notes
+
+* Introduction: Why Lisp?
+* Lather, Rinse, Repeat: A Tour of the REPL
+* Practical: A Simple Database
+* Syntax and Semantics
+* Functions
+* Variables
+* Macros: Standard Control Constructs
+* Macros: Defining Your Own
+* Practical: Building a Unit Test Framework
+* Numbers, Characters, and Strings
+* Collections
+* They Called It LISP for a Reason: List Processing
+* Beyond Lists: Other Uses for Cons Cells
+* Files and File I/O
+* Practical: A Portable Pathname Library
+* Object Reorientation: Generic Functions
+* Object Reorientation: Classes
+* A Few FORMAT Recipes
+* Beyond Exception Handling: Conditions and Restarts
+* The Special Operators
+* Programming in the Large: Packages and Symbols
+* LOOP for Black Belts
+* Practical: A Spam Filter
+* Practical: Parsing Binary Files
+* Practical: An ID3 Parser
+* Practical: Web Programming with AllegroServe
+* Practical: An MP3 Database
+* Practical: A Shoutcast Server
+* Practical: An MP3 Browser
+* Practical: An HTML Generation Library, the Interpreter
+* Practical: An HTML Generation Library, the Compiler
+* Conclusion: What's Next?

@@ -46,9 +46,10 @@
          (variable-match pattern input bindings))
         ((eql pattern input) bindings)
         ((segment-pattern-p pattern)
-         (segment-matcher pattern input bindings))
-        ((single-pattern-p pattern) ; ***
-         (single-matcher pattern input bindings)) ; ***
+         (segment-match pattern input bindings))
+        ;; ((single-pattern-p pattern) ; ***
+        ;;  (single-matcher pattern input bindings))
+                                        ; ***
         ((and (consp pattern) (consp input))
          (pat-match (rest pattern) (rest input)
                     (pat-match (first pattern) (first input)
@@ -134,9 +135,10 @@
      (What other feelings do you have?))))
 
 (defun eliza ()
-  "Response to user input using pattern matching rules."
-  (interactive-interpreter 'eliza>
-                           (compose #'flatten #'use-eliza-rules)))
+  "Respond to user input using pattern matching rules."
+  (loop
+    (print 'eliza>)
+    (write (flatten (use-eliza-rules (read))) :pretty t)))
 
 (defun use-eliza-rules (input)
   "Find some rule with which to transform the input."
