@@ -1,5 +1,5 @@
 (defpackage #:touretzky-drills
-  (:nicknames #:t-drills)
+  (:nicknames #:drills)
   (:use #:cl)
   (:export #:miles-per-gallon
            #:longer-than
@@ -12,6 +12,9 @@
            #:further
            #:my-not
            #:ordered
+           #:emphasize
+           #:emphasize2
+           #:emphasize3
            #:constrain-cond
            #:constrain-if
            ))

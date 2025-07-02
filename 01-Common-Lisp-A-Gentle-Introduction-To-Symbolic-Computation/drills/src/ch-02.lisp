@@ -43,26 +43,17 @@
         ((= n 0) n)
         (t (- n))))
 
-;; TODO 02.06
-;; Write EMPHASIZE3, which is like EMPHASIZE2 but adds the symbol VERY onto the list if it doesn't know how to emphasize it.
-;; For example, EMPHASIZE3 of (LONG DAY) should produce (VERY LONG DAY). What does EMPHASIZE3 of (VERY LONG DAY) produce?
+;; 02.06
+;; Write EMPHASIZE, which takes a list and if the car of the list is the symbol GOOD,
+;; replaces it with GREAT.
+;; For example, EMPHASIZE of (LONG DAY) should produce (VERY LONG DAY). What does EMPHASIZE of (VERY LONG DAY) produce?
 (defun emphasize (x)
-  (cond ((equal (first x) 'good) (cons 'great (rest x)))
-        ((equal (first x) 'bad) (cons 'awful (rest x)))))
-
-
-(defun emphasize2 (x)
-  (cond ((equal (first x) 'good) (cons 'great (rest x)))
-        ((equal (first x) 'bad) (cons 'awful (rest x)))
-        (t x)))
-
-(defun emphasize3 (x)
   (cond ((equal (first x) 'good) (cons 'great (rest x)))
         ((equal (first x) 'bad) (cons 'awful (rest x)))
         (t (cons 'very x))))
 
 
-;; TODO 02.07
+;; 02.07
 ;; Write a function CONSTRAIN that takes three inputs called X, MAX, and MIN. If X is less than MIN, it should return MIN;
 ;; if X is greater than MAX, it should return MAX. Otherwise, since X is between MIN and MAX, it should return X.
 ;; (CONSTRAIN 3 -50 50) should return 3. (CONSTRAIN 92 -50 50) should return 50. Write one version using COND and another
@@ -71,4 +62,10 @@
   (cond ((< n min) min)
         ((< max n) max)
         (t n)))
-(defun constrain-if (n min max))
+
+(defun constrain-if (n min max)
+  (if (< n min)
+      min
+      (if (< max n)
+          max
+          n)))
