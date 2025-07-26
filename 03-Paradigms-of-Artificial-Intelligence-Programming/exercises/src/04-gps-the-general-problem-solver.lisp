@@ -1,4 +1,7 @@
-(load "00-utils")
+(defpackage #:paip-04
+  (:use #:cl)
+  (:local-nicknames (#:c #:paip-common)))
+(in-package #:paip-04)
 
 (defvar *state* nil "The current state: a list of conditions.")
 (defvar *ops* nil "A list of available operators.")
@@ -12,8 +15,8 @@
 
 (defun GPS (state goals &optional (*ops* *ops*))
   "General Problem Solver: from state, achieve goals using *ops*."
-  (find-all-if #'action-p
-               (achieve-all (cons '(start) state) goals nil)))
+  (c:find-all-if #'action-p
+                 (achieve-all (cons '(start) state) goals nil)))
 (defun action-p (x)
   "Is x something that is (start) or (executing ...)?"
   (or (equal x '(start)) (executing-p x)))
@@ -41,36 +44,34 @@
 (defun permutations (s)
   (if (null s)
       (list nil)
-      (mappend #'(lambda (x)
-                   (mapcar #'(lambda (p)
-                               (cons x p))
-                           (permutations
-                            (remove-if #'(lambda (m) (equal x m)) s))))
-               s)))
-
-(permutations '(a b c))
+      (c:mappend #'(lambda (x)
+                     (mapcar #'(lambda (p)
+                                 (cons x p))
+                             (permutations
+                              (remove-if #'(lambda (m) (equal x m)) s))))
+                 s)))
 
 (defun achieve (state goal goal-stack)
   "A goal is achieved if it already holds,
 or if there is an appropriate op for it that is applicable."
   (dbg-indent :gps (length goal-stack) "Goal: ~a" goal)
-  (cond ((member-equal goal state) state)
-        ((member-equal goal goal-stack) nil)
+  (cond ((c:member-equal goal state) state)
+        ((c:member-equal goal goal-stack) nil)
         (t (some #'(lambda (op) (apply-op state goal op goal-stack))
                  (appropriate-ops goal state)))))
 
 (defun appropriate-ops (goal state)
   "Return a list of appropriate operators,
 sorted by the number of unfulfilled preconditions."
-  (sort (copy-list (find-all goal *ops* :test #'appropriate-p)) #'<
+  (sort (copy-list (c:find-all goal *ops* :test #'appropriate-p)) #'<
         :key #'(lambda (op)
                  (count-if #'(lambda (precond)
-                               (not (member-equal precond state)))
+                               (not (c:member-equal precond state)))
                            (op-preconds op)))))
 
 (defun appropriate-p (goal op)
   "An op is approprate to a goal if it is in its add list."
-  (member-equal goal (op-add-list op)))
+  (c:member-equal goal (op-add-list op)))
 
 (defun apply-op (state goal op goal-stack)
   "Print a message and update *state* if op is applicable."
@@ -81,7 +82,7 @@ sorted by the number of unfulfilled preconditions."
     (unless (null state2)
       (dbg-indent :gps (length goal-stack) "Action: ~a" (op-action op))
       (append (remove-if #'(lambda (x)
-                             (member-equal x (op-del-list op)))
+                             (c:member-equal x (op-del-list op)))
                          state2)
               (op-add-list op)))))
 
@@ -118,7 +119,7 @@ sorted by the number of unfulfilled preconditions."
     (fresh-line *debug-io*)
     (apply #'format *debug-io* format-string args)))
 
-(defun debug (&rest ids)
+(defun paip-debug (&rest ids)
   "Start dbg output on the given ids."
   (setf *dbg-ids* (union ids *dbg-ids*)))
 
@@ -204,10 +205,10 @@ sorted by the number of unfulfilled preconditions."
    :add-list `((at ,there))
    :del-list `((at ,here))))
 (defparameter *maze-ops*
-  (mappend #'make-maze-ops
-           '((1 2) (2 3) (3 4) (4 9) (9 14) (9 8) (8 7) (7 12) (12 13)
-             (12 11) (11 6) (11 16) (16 17) (17 22) (21 22) (22 23)
-             (23 18) (23 24) (24 19) (19 20) (20 15) (15 10) (10 5) (20 25))))
+  (c:mappend #'make-maze-ops
+             '((1 2) (2 3) (3 4) (4 9) (9 14) (9 8) (8 7) (7 12) (12 13)
+               (12 11) (11 6) (11 16) (16 17) (17 22) (21 22) (22 23)
+               (23 18) (23 24) (24 19) (19 20) (20 15) (15 10) (10 5) (20 25))))
 (defun find-path (start end)
   "Search a maze for a path from start to end"
   (let ((results (gps `((at ,start)) `((at ,end)))))

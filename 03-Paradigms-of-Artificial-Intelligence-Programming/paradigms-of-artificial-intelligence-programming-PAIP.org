@@ -325,6 +325,18 @@ Then programmers who want to extend the matcher just add entries to the table, a
 This style of programming, where pattern/action pairs are stored in a table, is called *data*-*driven programming*.
 It is a very flexible style that is appropriate for writing extensible systems.
 #+end_quote
+*** SEARCH PROBLEMS
+#+begin_quote
+Abstractly, a search problem can be characterized by four features:
+
+- The _start_ state.
+
+- The _goal_ state (or states).
+
+- The _successors_, or states that can be reached from any other state.
+
+- The _strategy_ that determines the *order* in which we search.
+#+end_quote
 
 ** Chapter 07 - STUDENT: Solving Algebra Word Problems
 ** Chapter 08 - Symbolic Mathematics: A Simplification Program

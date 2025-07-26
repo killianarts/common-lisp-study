@@ -1,3 +1,7 @@
+(defpackage #:paip-03
+  (:use #:cl)
+  (:local-nicknames (#:c #:paip-common)))
+(in-package #:paip-03)
 ;; EXERCISES
 ;; * Exercise 3.1 [m] Show a lambda expression that is equivalent to the above let* expression. You may need more than one lambda.
 
@@ -14,9 +18,9 @@
 ;; * Exercise 3.2 [s] The function cons can be seen as a special case of one of the other functions listed previously. Which one?
 
 ;; push?
-(setq 3-2-var '(b c))
-(cons 'a 3-2-var)
-(push 'a 3-2-var)
+;; (setq 3-2-var '(b c))
+;; (cons 'a 3-2-var)
+;; (push 'a 3-2-var)
 
 ;; Answer: list*
 
@@ -34,8 +38,6 @@
        (print-dotted (cdr exp))         ; Print the cdr
        (princ ")"))))                   ; Close the cons cell
 
-(print-dotted '(defun sum (&rest args) (+ args)))
-
 ;; ** ANSWER
 (defun dprint (x)
   "Print an expression in dotted pair notation."
@@ -49,7 +51,6 @@
 (defun pr-rest (x)
   (princ " . ")
   (dprint x))
-(dprint '(defun sum (&rest args) (+ args)))
 
 ;; * Exercise 3.4 (m)
 ;; Write a function that, like the regular print function, will print an
@@ -64,15 +65,13 @@
        (print-dotted2 (cdr exp))
        (princ ")"))))
 
-(print-dotted2 '(defun sum (&rest args) (+ args)))
-
 ;; ** ANSWER
-(defun pr-rest (x)
-  (cond ((null x))
-        ((atom x) (princ " . ") (princ x))
-        (t (princ " ") (dprint (first x)) (pr-rest (rest x)))))
+;; (defun pr-rest (x)
+;;   (cond ((null x))
+;;         ((atom x) (princ " . ") (princ x))
+;;         (t (princ " ") (dprint (first x)) (pr-rest (rest x)))))
 
-(dprint '(defun sum (&rest args) (+ args)))
+;; (dprint '(defun sum (&rest args) (+ args)))
 
 ;; I don't get it, but whatever.
 
@@ -178,14 +177,12 @@
 ;; * Exercise 3.6 (s)
 ;; Given the following initialization for the lexical variable a and the special variable *b*, what will be the value of the let form?
 
-(setf a 'global-a)
-(defvar *b* 'global-b)
-
-(defun fn () *b*)
-
-(let ((a 'local-a)
-      (*b* 'local-b))
-  (list a *b* (fn) (symbol-value 'a) (symbol-value '*b*)))
+;; (setf a 'global-a)
+;; (defvar *b* 'global-b)
+;; (defun fn () *b*)
+;; (let ((a 'local-a)
+;;       (*b* 'local-b))
+;;   (list a *b* (fn) (symbol-value 'a) (symbol-value '*b*)))
 
 ;; * Exercise 3.7 (s)
 ;; Why do you think the leftmost of two keys is the one that counts, rather than the rightmost?
@@ -197,7 +194,6 @@
 ;; Write a version of length using the function reduce.
 (defun length-with-reduce (list)
   (reduce #'+ (mapcar #'(lambda (x) 1) list)))
-
 
 ;; * Exercise 3.10 (m)
 ;; Use a reference manual or DESCRIBE to figure out what the functions LCM and NRECONC do
@@ -221,5 +217,5 @@
 ;; You will have to consult a reference to learn new format directives.
 
 ;; ~@( ... ~) for capitalizing the first word
-(format nil"~{~@(~a~)~}" '(hi my name is micah))
+;; (format nil"~{~@(~a~)~}" '(hi my name is micah))
 ;; Who the hell knows, man?

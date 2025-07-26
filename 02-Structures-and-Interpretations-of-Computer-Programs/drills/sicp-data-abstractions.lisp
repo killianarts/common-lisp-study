@@ -359,12 +359,14 @@
                             (enumerate-interval 1 (- i 1))))
                 (enumerate-interval 1 (- i 1))))
    (enumerate-interval 1 n)))
+#+nil
+(unique-triples 5)
 
 (defun triples-with-sum (n s)
   (remove-if-not #'(lambda (x) (= s (triple-sum x)))
                  (mapcar #'make-triple-sum (unique-triples n))))
 
-(triples-with-sum 10 10)
+(triples-with-sum 500 50)
 
 (defun permutations (s)
   (if (null s)

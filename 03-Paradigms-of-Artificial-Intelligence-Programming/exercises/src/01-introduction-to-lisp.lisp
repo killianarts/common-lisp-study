@@ -1,4 +1,12 @@
-;; * CHAPTER 1 CODE
+(defpackage #:paip-01
+  (:use #:cl)
+  (:local-nicknames (#:c #:paip-common))
+  (:export #:mappend
+           #:number-and-negation
+           #:numbers-and-negations))
+(in-package #:paip-01)
+
+;; CHAPTER 1 CODE
 
 ;; 1.1 - 1.5 NOTHING
 ;; 1.6 USING FUNCTIONS
@@ -16,10 +24,10 @@
   "Select the last name from a name represented as a list."
   (first (last name)))
 
-(setf names '((John Q Public) (Malcolm X)
-              (Admiral Grace Murray Hopper) (Spot)
-              (Aristotle) (A A Milne) (Z Z Top)
-              (Sir Larry Olivier) (Miss Scarlet)))
+(defparameter *names* '((John Q Public) (Malcolm X)
+                        (Admiral Grace Murray Hopper) (Spot)
+                        (Aristotle) (A A Milne) (Z Z Top)
+                        (Sir Larry Olivier) (Miss Scarlet)))
 
 ;; 1.7 HIGHER-ORDER FUNCTIONS
 (defun mappend (fn the-list)
@@ -41,13 +49,14 @@
 ;; EXERCISES
 ;; * 1.1 (m) Define a version of last-name that handles "Rex Morgan MD," "Morton Downey, Jr.," and whatever other cases you can think of.
 ;; PAIP answer
-(defun last-name (name)
-  "Select the last name from a name represented in a list using recursion"
-  (_last-name (reverse name)))
 
-(defun _last-name (name)
+(defun better-last-name (name)
+  "Select the last name from a name represented in a list using recursion"
+  (_better-last-name (reverse name)))
+
+(defun _better-last-name (name)
   (cond ((null name) nil)
-        ((member (first name) *titles*) (_last-name (rest name)))
+        ((member (first name) *titles*) (_better-last-name (rest name)))
         (t (first name))))
 
 ;; * 1.2 (m) Write a function to exponentiate, or raise a number to an integral power.
@@ -61,10 +70,10 @@
         (t (* x (power x (- n 1))))))
 
 ;; my answer
-(defun power (number exponent)
+(defun my-power (number exponent)
   (if (= exponent 0)
       1
-      (* number (power number (- exponent 1)))))
+      (* number (my-power number (- exponent 1)))))
 
 ;; * 1.3 (m) Write a function that counts the number of atoms in an expression. For example: (count-atoms '(a (b) c)) = 3.
 ;; * Notice that there is something of an ambiguity in this: should (a nil c) count as three atoms, or as two, because it
@@ -77,7 +86,6 @@
     ((atom x) 1)
     (t (+ (count-atoms (first x))
           (count-atoms (rest x))))))
-
 (defun count-all-atoms (x)
   "Count all atoms in a nested list--including nil."
   (cond
@@ -101,5 +109,3 @@
 
 (defun dot-product (left right)
   (reduce #'+ (mapcar #'(lambda (x y) (* x y)) left right)))
-
-(dot-product '(10 20) '(3 4))
